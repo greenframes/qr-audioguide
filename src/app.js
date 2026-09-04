@@ -7,6 +7,15 @@ import { makeSingleImagePDF } from './pdf.js';
 // ── DATA (aus Supabase geladen) ────────────────────────────────
 let STATIONS = [];
 let GALLERY = [];
+let SETTINGS = {
+  hero_title: 'Alte Schraubenfabrik Hagen',
+  hero_subtitle: 'Funcke & Hueck',
+  hero_image_url: '',
+  welcome_heading: '{n} Stationen,\n180 Jahre.',
+  welcome_text: 'Von der ersten Dampfmaschine Hagens 1844 über 1.500 Beschäftigte im Jahr 1913 bis zur denkmalgerechten Sanierung heute. Jede Station: ein kurzer Text und ein Audioguide von etwa drei Minuten.',
+  link_label: 'Mehr auf alte-schraubenfabrik.de',
+  link_url: 'https://www.alte-schraubenfabrik.de',
+};
 let dataLoaded = false;
 let dataError = null;
 let session = null;
@@ -67,6 +76,9 @@ let state = {
   editImageUrl: null, editImageFile: null,
   editAudioUrl: null, editAudioName: null, editAudioType: null, editAudioFile: null,
   saving: false,
+  homeHeroTitle: '', homeHeroSubtitle: '', homeHeroImageUrl: null, homeHeroImageFile: null,
+  homeWelcomeHeading: '', homeWelcomeText: '', homeLinkLabel: '', homeLinkUrl: '',
+  homeSaving: false,
   searchQ: '', filterStatus: 'all',
   qrSize: 168,
   qrLabel: true,
@@ -239,14 +251,18 @@ function toast(msg) {
 
 // ── SUPABASE DATENZUGRIFF ───────────────────────────────────
 async function loadData() {
-  const [stRes, galRes] = await Promise.all([
+  const [stRes, galRes, setRes] = await Promise.all([
     supabase.from('stations').select('*').order('sort_order', { ascending: true }),
     supabase.from('gallery').select('*').order('sort_order', { ascending: true }),
+    supabase.from('site_settings').select('*').eq('id', 'main').maybeSingle(),
   ]);
   if (stRes.error) throw stRes.error;
   if (galRes.error) throw galRes.error;
   STATIONS = stRes.data || [];
   GALLERY = (galRes.data || []).map(g => ({ src: g.image_url, cap: g.caption }));
+  // site_settings ist optional (z.B. bei einer noch nicht migrierten Datenbank) -
+  // dann bleiben einfach die eingebauten Standardtexte erhalten.
+  if (!setRes.error && setRes.data) SETTINGS = { ...SETTINGS, ...setRes.data };
 }
 async function incrementScan(stationId) {
   try { await supabase.rpc('increment_station_scans', { station_id: stationId }); } catch (e) {}
@@ -592,25 +608,26 @@ function buildLightbox() {
 }
 
 function buildStart() {
-  const hero = GALLERY[0]?.src || STATIONS[0]?.image_url || '';
+  const hero = SETTINGS.hero_image_url || GALLERY[0]?.src || STATIONS[0]?.image_url || '';
+  const heading = escHtml(SETTINGS.welcome_heading.replace('{n}', STATIONS.length)).replace(/\n/g, '<br>');
   return `
   <div style="flex:1;display:flex;flex-direction:column;overflow:hidden;animation:fadein .28s ease both;">
     <div style="position:relative;flex-shrink:0;height:48vh;min-height:260px;overflow:hidden;background:#3C3C3B;">
-      <img src="${hero}" alt="Die alte Schraubenfabrik Hagen, restaurierte Backsteinfassade" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"/>
+      <img src="${hero}" alt="${escHtml(SETTINGS.hero_title)}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"/>
       <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.10) 0%,rgba(0,0,0,.22) 45%,rgba(20,20,19,.90) 100%);"></div>
       <div style="position:absolute;top:env(safe-area-inset-top,16px);right:16px;margin-top:8px;background:rgba(201,168,124,.9);backdrop-filter:blur(8px);padding:6px 14px;border-radius:20px;">
         <span style="font:600 11px 'Hanken Grotesk',sans-serif;color:#fff;letter-spacing:.6px;">${STATIONS.length} STATIONEN</span>
       </div>
       <div style="position:absolute;bottom:20px;left:20px;right:20px;">
-        <div style="font:700 36px/1.06 'Cormorant Garamond',serif;color:#fff;letter-spacing:-.3px;text-shadow:0 2px 14px rgba(0,0,0,.3);">Alte Schrauben&shy;fabrik<br>Hagen</div>
-        <div data-action="admin-tap" style="font:400 13px 'Hanken Grotesk',sans-serif;color:rgba(255,255,255,.65);margin-top:6px;letter-spacing:.4px;">Funcke &amp; Hueck</div>
+        <div style="font:700 36px/1.06 'Cormorant Garamond',serif;color:#fff;letter-spacing:-.3px;text-shadow:0 2px 14px rgba(0,0,0,.3);">${escHtml(SETTINGS.hero_title)}</div>
+        <div data-action="admin-tap" style="font:400 13px 'Hanken Grotesk',sans-serif;color:rgba(255,255,255,.65);margin-top:6px;letter-spacing:.4px;">${escHtml(SETTINGS.hero_subtitle)}</div>
       </div>
     </div>
     <div class="scroll" style="flex:1;background:#faf7f7;">
       <div style="padding:22px 20px 10px;">
         <div style="font:400 10px 'Hanken Grotesk',sans-serif;color:#C9A87C;letter-spacing:.14em;text-transform:uppercase;margin-bottom:7px;">Willkommen</div>
-        <h1 style="font:600 29px/1.16 'Cormorant Garamond',serif;color:#3C3C3B;margin:0 0 12px;letter-spacing:-.2px;">${STATIONS.length} Stationen,<br>180 Jahre.</h1>
-        <p style="font:400 15.5px/1.7 'Hanken Grotesk',sans-serif;color:#706f6f;margin:0 0 22px;text-wrap:pretty;">Von der ersten Dampfmaschine Hagens 1844 über 1.500 Beschäftigte im Jahr 1913 bis zur denkmalgerechten Sanierung heute. Jede Station: ein kurzer Text und ein Audioguide von etwa drei Minuten.</p>
+        <h1 style="font:600 29px/1.16 'Cormorant Garamond',serif;color:#3C3C3B;margin:0 0 12px;letter-spacing:-.2px;">${heading}</h1>
+        <p style="font:400 15.5px/1.7 'Hanken Grotesk',sans-serif;color:#706f6f;margin:0 0 22px;text-wrap:pretty;">${escHtml(SETTINGS.welcome_text)}</p>
         <div style="display:flex;flex-direction:column;gap:11px;margin-bottom:28px;">
           <button data-action="go-scanner" class="tap" style="background:#3C3C3B;color:#faf7f7;border:none;border-radius:999px;padding:18px 26px;font:600 15px 'Hanken Grotesk',sans-serif;display:flex;align-items:center;justify-content:center;gap:10px;cursor:pointer;width:100%;letter-spacing:.1px;min-height:56px;">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="5" y="5" width="3" height="3" fill="currentColor" stroke="none"/><rect x="16" y="5" width="3" height="3" fill="currentColor" stroke="none"/><rect x="5" y="16" width="3" height="3" fill="currentColor" stroke="none"/><line x1="14" y1="14" x2="21" y2="14"/><line x1="14" y1="17" x2="17" y2="17"/><line x1="20" y1="17" x2="21" y2="17"/><line x1="14" y1="20" x2="17" y2="20"/><line x1="20" y1="20" x2="21" y2="20"/></svg>
@@ -618,13 +635,14 @@ function buildStart() {
           </button>
           <button data-action="go-list" class="tap" style="background:transparent;color:#3C3C3B;border:1.5px solid #d8d2d2;border-radius:999px;padding:17px 26px;font:500 15px 'Hanken Grotesk',sans-serif;cursor:pointer;width:100%;min-height:56px;">Alle Stationen ansehen</button>
         </div>
-        <a href="https://www.alte-schraubenfabrik.de" target="_blank" rel="noopener noreferrer" class="tap" style="display:flex;align-items:center;justify-content:space-between;gap:12px;background:linear-gradient(135deg,#C9A87C,#b8925f);border-radius:16px;padding:16px 18px;margin-bottom:24px;text-decoration:none;box-shadow:0 6px 20px rgba(201,168,124,.35);">
+        ${SETTINGS.link_url ? `
+        <a href="${escHtml(SETTINGS.link_url)}" target="_blank" rel="noopener noreferrer" class="tap" style="display:flex;align-items:center;justify-content:space-between;gap:12px;background:linear-gradient(135deg,#C9A87C,#b8925f);border-radius:16px;padding:16px 18px;margin-bottom:24px;text-decoration:none;box-shadow:0 6px 20px rgba(201,168,124,.35);">
           <div>
             <div style="font:700 10px 'Hanken Grotesk',sans-serif;color:rgba(255,255,255,.85);letter-spacing:.12em;text-transform:uppercase;margin-bottom:3px;">Das Projekt</div>
-            <div style="font:600 15px 'Hanken Grotesk',sans-serif;color:#fff;">Mehr auf alte-schraubenfabrik.de</div>
+            <div style="font:600 15px 'Hanken Grotesk',sans-serif;color:#fff;">${escHtml(SETTINGS.link_label)}</div>
           </div>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.3" style="flex-shrink:0;"><path d="M7 17L17 7M17 7H9M17 7v8"/></svg>
-        </a>
+        </a>` : ''}
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
           <span style="font:600 10px 'Hanken Grotesk',sans-serif;color:#908d8d;letter-spacing:.14em;text-transform:uppercase;">Stationen</span>
           <span data-action="go-list" style="font:500 13px 'Hanken Grotesk',sans-serif;color:#C9A87C;cursor:pointer;">Alle →</span>
@@ -907,12 +925,12 @@ function buildAdmin() {
         </div>
       </div>
       <div class="admin-nav-tabs" style="display:flex;border-top:1px solid rgba(255,255,255,.07);">
-        ${[['dash', 'Dashboard'], ['edit', 'Bearbeiten'], ['qr', 'QR-Codes']].map(([k, l]) => `
+        ${[['dash', 'Dashboard'], ['home', 'Startseite'], ['edit', 'Bearbeiten'], ['qr', 'QR-Codes']].map(([k, l]) => `
         <button data-action="admin-nav" data-nav="${k}" data-current="${state.aScreen === k}" style="flex:1;background:none;border:none;border-bottom:2.5px solid ${state.aScreen === k ? '#C9A87C' : 'transparent'};padding:12px 4px;font:${state.aScreen === k ? '600' : '400'} 12px 'Hanken Grotesk',sans-serif;color:${state.aScreen === k ? '#C9A87C' : 'rgba(250,247,247,.45)'};cursor:pointer;transition:color .12s;">${l}</button>`).join('')}
       </div>
     </div>
     <div class="admin-main" style="flex:1;overflow:hidden;display:flex;flex-direction:column;">
-      ${state.aScreen === 'dash' ? buildAdminDash() : state.aScreen === 'edit' ? buildAdminEdit() : buildAdminQr()}
+      ${state.aScreen === 'dash' ? buildAdminDash() : state.aScreen === 'home' ? buildAdminHome() : state.aScreen === 'edit' ? buildAdminEdit() : buildAdminQr()}
     </div>
   </div>
   ${buildToast()}`;
@@ -997,6 +1015,67 @@ function buildAdminDash() {
         </div>
       </div>`).join('')}
       <div style="height:env(safe-area-inset-bottom,24px);min-height:24px;"></div>
+    </div>
+  </div>`;
+}
+
+function buildAdminHome() {
+  const heroPreview = state.homeHeroImageUrl || SETTINGS.hero_image_url || GALLERY[0]?.src || STATIONS[0]?.image_url || '';
+  return `
+  <div style="flex:1;display:flex;flex-direction:column;overflow:hidden;animation:fadein .18s ease both;">
+    <div style="padding:14px 18px 12px;border-bottom:1px solid #e9e4e4;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;background:#ffffff;">
+      <div style="font:700 18px 'Cormorant Garamond',serif;color:#3C3C3B;">Startseite bearbeiten</div>
+      <button data-action="save-home" class="tap" ${state.homeSaving ? 'disabled' : ''} style="background:#3C3C3B;border:none;border-radius:9px;padding:8px 14px;font:600 12px 'Hanken Grotesk',sans-serif;color:#faf7f7;cursor:pointer;min-height:40px;opacity:${state.homeSaving ? .6 : 1};">${state.homeSaving ? 'Speichert…' : 'Speichern'}</button>
+    </div>
+    <div class="scroll" style="flex:1;padding:18px 18px 0;">
+      <div class="admin-edit-layout" style="display:block;">
+      <div class="admin-edit-main" style="min-width:0;">
+      <div style="margin-bottom:15px;">
+        <label style="font:600 11px 'Hanken Grotesk',sans-serif;color:#706f6f;letter-spacing:.12em;text-transform:uppercase;display:block;margin-bottom:7px;">Titel (großer Aufmacher-Text)</label>
+        <input value="${escHtml(state.homeHeroTitle)}" data-field="homeHeroTitle" style="width:100%;border:1.5px solid #e9e4e4;border-radius:11px;padding:13px 14px;font:500 16px 'Cormorant Garamond',serif;color:#3C3C3B;background:#fff;outline:none;"/>
+      </div>
+      <div style="margin-bottom:15px;">
+        <label style="font:600 11px 'Hanken Grotesk',sans-serif;color:#706f6f;letter-spacing:.12em;text-transform:uppercase;display:block;margin-bottom:7px;">Untertitel</label>
+        <input value="${escHtml(state.homeHeroSubtitle)}" data-field="homeHeroSubtitle" style="width:100%;border:1.5px solid #e9e4e4;border-radius:11px;padding:12px 13px;font:400 13px 'Hanken Grotesk',sans-serif;color:#3C3C3B;background:#fff;outline:none;"/>
+      </div>
+      <div style="margin-bottom:15px;">
+        <label style="font:600 11px 'Hanken Grotesk',sans-serif;color:#706f6f;letter-spacing:.12em;text-transform:uppercase;display:block;margin-bottom:8px;">Titelbild</label>
+        <div style="background:#fff;border:1.5px solid #e9e4e4;border-radius:11px;padding:12px;display:flex;align-items:center;gap:12px;">
+          <div style="width:72px;height:56px;border-radius:8px;overflow:hidden;background:#3C3C3B;flex-shrink:0;">
+            ${heroPreview ? `<img src="${heroPreview}" alt="" style="width:100%;height:100%;object-fit:cover;display:block;"/>` : ''}
+          </div>
+          <div style="flex:1;min-width:0;font:400 12px 'Hanken Grotesk',sans-serif;color:#908d8d;">${state.homeHeroImageUrl || SETTINGS.hero_image_url ? 'Eigenes Bild' : 'Automatisch (erstes Stationsbild)'}</div>
+          <label class="tap" style="background:#faf7f7;border:none;border-radius:7px;padding:8px 13px;font:500 11px 'Hanken Grotesk',sans-serif;color:#706f6f;cursor:pointer;flex-shrink:0;">
+            Ersetzen
+            <input type="file" accept="image/*" data-action="upload-home-image" style="display:none;">
+          </label>
+        </div>
+      </div>
+      <div style="margin-bottom:15px;">
+        <label style="font:600 11px 'Hanken Grotesk',sans-serif;color:#706f6f;letter-spacing:.12em;text-transform:uppercase;display:block;margin-bottom:7px;">Überschrift im Willkommenstext</label>
+        <textarea data-field="homeWelcomeHeading" rows="2" style="width:100%;border:1.5px solid #e9e4e4;border-radius:11px;padding:12px 14px;font:500 16px 'Cormorant Garamond',serif;color:#3C3C3B;background:#fff;outline:none;resize:vertical;">${escHtml(state.homeWelcomeHeading)}</textarea>
+        <div style="font:400 11px 'Hanken Grotesk',sans-serif;color:#908d8d;margin-top:6px;">Tipp: <code>{n}</code> wird automatisch durch die Anzahl der Stationen ersetzt.</div>
+      </div>
+      <div style="margin-bottom:15px;">
+        <label style="font:600 11px 'Hanken Grotesk',sans-serif;color:#706f6f;letter-spacing:.12em;text-transform:uppercase;display:block;margin-bottom:7px;">Willkommenstext</label>
+        <textarea data-field="homeWelcomeText" rows="5" style="width:100%;border:1.5px solid #e9e4e4;border-radius:11px;padding:12px 14px;font:400 13px/1.65 'Hanken Grotesk',sans-serif;color:#3C3C3B;background:#fff;outline:none;resize:vertical;">${escHtml(state.homeWelcomeText)}</textarea>
+      </div>
+      </div>
+      <div class="admin-edit-side">
+      <div style="background:#fff;border-radius:14px;border:1px solid #e9e4e4;padding:16px;margin-bottom:16px;">
+        <div style="font:600 11px 'Hanken Grotesk',sans-serif;color:#706f6f;letter-spacing:.12em;text-transform:uppercase;margin-bottom:12px;">Auffälliger Link (Traffic-Banner)</div>
+        <div style="margin-bottom:12px;">
+          <label style="font:500 11px 'Hanken Grotesk',sans-serif;color:#706f6f;display:block;margin-bottom:6px;">Beschriftung</label>
+          <input value="${escHtml(state.homeLinkLabel)}" data-field="homeLinkLabel" placeholder="z.B. Mehr auf ihre-domain.de" style="width:100%;border:1.5px solid #e9e4e4;border-radius:9px;padding:10px 12px;font:400 13px 'Hanken Grotesk',sans-serif;color:#3C3C3B;background:#fff;outline:none;"/>
+        </div>
+        <div style="margin-bottom:4px;">
+          <label style="font:500 11px 'Hanken Grotesk',sans-serif;color:#706f6f;display:block;margin-bottom:6px;">Ziel-URL</label>
+          <input value="${escHtml(state.homeLinkUrl)}" data-field="homeLinkUrl" placeholder="https://…  (leer = Banner ausblenden)" style="width:100%;border:1.5px solid #e9e4e4;border-radius:9px;padding:10px 12px;font:400 13px 'Hanken Grotesk',sans-serif;color:#3C3C3B;background:#fff;outline:none;"/>
+        </div>
+      </div>
+      </div>
+      </div>
+      <div style="height:env(safe-area-inset-bottom,32px);min-height:32px;"></div>
     </div>
   </div>`;
 }
@@ -1227,6 +1306,13 @@ function bindEvents() {
     if (state.editImageUrl) URL.revokeObjectURL(state.editImageUrl);
     setState({ editImageUrl: URL.createObjectURL(file), editImageFile: file });
   });
+  const homeImgInput = document.querySelector('[data-action="upload-home-image"]');
+  if (homeImgInput) homeImgInput.addEventListener('change', e => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    if (state.homeHeroImageUrl) URL.revokeObjectURL(state.homeHeroImageUrl);
+    setState({ homeHeroImageUrl: URL.createObjectURL(file), homeHeroImageFile: file });
+  });
   const audioInput = document.querySelector('[data-action="upload-audio"]');
   if (audioInput) audioInput.addEventListener('change', e => {
     const file = e.target.files && e.target.files[0];
@@ -1268,6 +1354,16 @@ function bindEvents() {
       setState({ [field]: value });
     });
   });
+}
+
+function resetHomeEditState() {
+  return {
+    aScreen: 'home',
+    homeHeroTitle: SETTINGS.hero_title, homeHeroSubtitle: SETTINGS.hero_subtitle,
+    homeHeroImageUrl: null, homeHeroImageFile: null,
+    homeWelcomeHeading: SETTINGS.welcome_heading, homeWelcomeText: SETTINGS.welcome_text,
+    homeLinkLabel: SETTINGS.link_label, homeLinkUrl: SETTINGS.link_url,
+  };
 }
 
 function resetEditState(idx) {
@@ -1323,13 +1419,14 @@ function handleAction(action, data) {
     case 'toggle-pw': setState({ pwVisible: !state.pwVisible }); break;
     case 'do-login': doLogin(); break;
     case 'do-logout': doLogout(); break;
-    case 'admin-nav': setState({ aScreen: data.nav }); break;
+    case 'admin-nav': setState(data.nav === 'home' ? resetHomeEditState() : { aScreen: data.nav }); break;
     case 'new-station': setState(resetEditState(-1)); break;
     case 'edit-station': setState(resetEditState(Number(data.idx))); break;
     case 'go-qr': setState({ aScreen: 'qr', qrStationId: data.id }); break;
     case 'set-status': setState({ editStatus: data.status }); break;
     case 'save-draft': saveStationEdits('draft'); break;
     case 'save-pub': saveStationEdits('pub'); break;
+    case 'save-home': saveHomeSettings(); break;
     case 'dl-qr': {
       const st = STATIONS.find(s => s.id === state.qrStationId) || STATIONS[0];
       if (st) downloadQR(st, data.fmt);
@@ -1395,6 +1492,32 @@ async function saveStationEdits(status) {
     setState({ saving: false, aScreen: 'dash', editImageFile: null, editAudioFile: null });
   } catch (e) {
     setState({ saving: false });
+    alert('Speichern fehlgeschlagen: ' + (e?.message || e));
+  }
+}
+
+async function saveHomeSettings() {
+  setState({ homeSaving: true });
+  try {
+    let heroImageUrl = SETTINGS.hero_image_url || null;
+    if (state.homeHeroImageFile) heroImageUrl = await uploadToStorage(state.homeHeroImageFile, 'images');
+
+    const payload = {
+      hero_title: state.homeHeroTitle.trim() || SETTINGS.hero_title,
+      hero_subtitle: state.homeHeroSubtitle.trim(),
+      hero_image_url: heroImageUrl,
+      welcome_heading: state.homeWelcomeHeading,
+      welcome_text: state.homeWelcomeText.trim(),
+      link_label: state.homeLinkLabel.trim(),
+      link_url: state.homeLinkUrl.trim(),
+    };
+    const { data, error } = await supabase.from('site_settings').update(payload).eq('id', 'main').select().single();
+    if (error) throw error;
+    SETTINGS = { ...SETTINGS, ...data };
+    toast('Startseite gespeichert.');
+    setState({ homeSaving: false, homeHeroImageFile: null });
+  } catch (e) {
+    setState({ homeSaving: false });
     alert('Speichern fehlgeschlagen: ' + (e?.message || e));
   }
 }
