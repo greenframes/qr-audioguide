@@ -616,6 +616,13 @@ function buildStart() {
           </button>
           <button data-action="go-list" class="tap" style="background:transparent;color:#3C3C3B;border:1.5px solid #d8d2d2;border-radius:999px;padding:17px 26px;font:500 15px 'Hanken Grotesk',sans-serif;cursor:pointer;width:100%;min-height:56px;">Alle Stationen ansehen</button>
         </div>
+        <a href="https://www.alte-schraubenfabrik.de" target="_blank" rel="noopener noreferrer" class="tap" style="display:flex;align-items:center;justify-content:space-between;gap:12px;background:linear-gradient(135deg,#C9A87C,#b8925f);border-radius:16px;padding:16px 18px;margin-bottom:24px;text-decoration:none;box-shadow:0 6px 20px rgba(201,168,124,.35);">
+          <div>
+            <div style="font:700 10px 'Hanken Grotesk',sans-serif;color:rgba(255,255,255,.85);letter-spacing:.12em;text-transform:uppercase;margin-bottom:3px;">Das Projekt</div>
+            <div style="font:600 15px 'Hanken Grotesk',sans-serif;color:#fff;">Mehr auf alte-schraubenfabrik.de</div>
+          </div>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.3" style="flex-shrink:0;"><path d="M7 17L17 7M17 7H9M17 7v8"/></svg>
+        </a>
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
           <span style="font:600 10px 'Hanken Grotesk',sans-serif;color:#908d8d;letter-spacing:.14em;text-transform:uppercase;">Stationen</span>
           <span data-action="go-list" style="font:500 13px 'Hanken Grotesk',sans-serif;color:#C9A87C;cursor:pointer;">Alle →</span>
