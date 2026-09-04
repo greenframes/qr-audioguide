@@ -14,4 +14,4 @@ export const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiO
 // Die öffentliche Adresse, unter der die App später erreichbar ist
 // (deine Subdomain). Wird benutzt, um die QR-Codes zu erzeugen, die
 // Besucher zu den Stationen führen. Ohne trailing slash.
-export const SITE_URL = 'https://audioguide.example.de';
+export const SITE_URL = 'https://alte-schraubenfabrik.de';

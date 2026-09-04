@@ -41,6 +41,49 @@
   .safe-top    { padding-top: env(safe-area-inset-top, 0px); }
   .safe-bottom { padding-bottom: env(safe-area-inset-bottom, 0px); }
   .safe-sides  { padding-left: env(safe-area-inset-left, 0px); padding-right: env(safe-area-inset-right, 0px); }
+
+  /* ── Desktop-Layout ──────────────────────────────────────────
+     Besucher-Ansicht: auf breiten Bildschirmen als zentrierte
+     "Handy-Karte" darstellen (Besucher nutzen ohnehin ein Handy).
+     Admin-Bereich: volle Breite mit Seitenleiste statt Reiter-Tabs,
+     damit Formulare zum Bearbeiten mehr Platz haben. */
+  @media (min-width: 860px) {
+    body { display: flex; align-items: center; justify-content: center; }
+    #app.mode-visitor {
+      position: relative; inset: auto;
+      width: min(94vw, 1000px); height: 90vh; max-height: 960px;
+      border-radius: 20px; overflow: hidden;
+      box-shadow: 0 30px 80px rgba(0,0,0,.45), 0 0 0 1px rgba(255,255,255,.06);
+    }
+    #app.mode-admin {
+      position: relative; inset: auto;
+      width: 100%; max-width: 1180px; height: 88vh; max-height: 920px;
+      border-radius: 20px; overflow: hidden;
+      box-shadow: 0 30px 80px rgba(0,0,0,.4);
+      flex-direction: row !important;
+    }
+    #app.mode-admin > div:first-child { flex-direction: row !important; height: 100% !important; }
+    .admin-sidebar {
+      width: 210px; flex-shrink: 0; display: flex !important; flex-direction: column !important;
+      padding-top: 0 !important; border-right: 1px solid rgba(255,255,255,.07);
+    }
+    .admin-sidebar .admin-topbar-row { height: 60px; }
+    .admin-nav-tabs {
+      flex-direction: column !important; border-top: none !important;
+      padding: 10px; gap: 2px; flex: 1;
+    }
+    .admin-nav-tabs button {
+      flex: none !important; text-align: left !important; border-bottom: none !important;
+      border-left: 2.5px solid transparent !important; border-radius: 8px;
+      padding: 11px 14px !important;
+    }
+    .admin-nav-tabs button[data-current="true"] { background: rgba(201,168,124,.1); border-left-color: #C9A87C !important; }
+    .admin-main { flex: 1; min-width: 0; display: flex; flex-direction: column; height: 100%; }
+    .admin-edit-layout { display: grid !important; grid-template-columns: 1fr 340px; gap: 24px; align-items: start; }
+    .admin-edit-layout .admin-edit-side { position: sticky; top: 0; }
+    .admin-qr-layout { display: grid !important; grid-template-columns: 340px 1fr; gap: 24px; align-items: start; }
+    .admin-stat-grid { grid-template-columns: repeat(4, 1fr) !important; }
+  }
 </style>
 </head>
 <body>

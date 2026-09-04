@@ -376,6 +376,7 @@ function render() {
   const prev = app.querySelectorAll('.scroll');
   const tops = Array.from(prev).map(el => el.scrollTop);
   app.innerHTML = buildApp();
+  app.className = (state.view === 'admin' || state.view === 'admin-login') ? 'mode-admin' : 'mode-visitor';
   const next = app.querySelectorAll('.scroll');
   next.forEach((el, i) => { if (tops[i] != null) el.scrollTop = tops[i]; });
   bindEvents();
@@ -415,6 +416,8 @@ function buildVisitor() {
   if (state.vScreen === 'scanner') content = buildScanner();
   if (state.vScreen === 'station') content = buildStation();
   if (state.vScreen === 'sources') content = buildSources();
+  if (state.vScreen === 'impressum') content = buildImpressum();
+  if (state.vScreen === 'datenschutz') content = buildDatenschutz();
   return `
   <div style="flex:1;display:flex;flex-direction:column;overflow:hidden;background:${state.vScreen === 'scanner' ? '#0A0A0A' : state.vScreen === 'station' ? '#ffffff' : '#faf7f7'};">
     ${content}
@@ -463,6 +466,93 @@ function buildSources() {
       <div style="height:calc(32px + env(safe-area-inset-bottom,0px));"></div>
     </div>
   </div>`;
+}
+
+// ── EINFACHE TEXTSEITE (Impressum / Datenschutz) ─────────────
+function buildLegalPage(title, sectionsHtml) {
+  return `
+  <div style="flex:1;display:flex;flex-direction:column;overflow:hidden;background:#faf7f7;animation:fadein .2s ease both;">
+    <div style="background:#faf7f7;padding:env(safe-area-inset-top,0px) 18px 0;flex-shrink:0;border-bottom:1px solid #e9e4e4;">
+      <div style="height:56px;display:flex;align-items:center;justify-content:space-between;">
+        <button data-action="go-start" class="tap" style="width:42px;height:42px;border-radius:50%;background:#e9e4e4;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;" aria-label="Zurück">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3C3C3B" stroke-width="2.5"><path d="M19 12H5M5 12l7 7M5 12l7-7"/></svg>
+        </button>
+        <span style="font:600 16px 'Hanken Grotesk',sans-serif;color:#3C3C3B;">${title}</span>
+        <div style="width:42px;"></div>
+      </div>
+    </div>
+    <div class="scroll" style="flex:1;">
+      <div style="padding:22px 20px 40px;max-width:640px;">
+        ${sectionsHtml}
+      </div>
+      <div style="height:calc(24px + env(safe-area-inset-bottom,0px));"></div>
+    </div>
+  </div>`;
+}
+function legalSection(heading, bodyHtml) {
+  return `
+  <div style="margin-bottom:26px;">
+    <h2 style="font:600 18px/1.3 'Cormorant Garamond',serif;color:#3C3C3B;margin:0 0 8px;">${heading}</h2>
+    <div style="font:400 14px/1.75 'Hanken Grotesk',sans-serif;color:#454444;">${bodyHtml}</div>
+  </div>`;
+}
+function placeholder(text) {
+  return `<span style="background:#fbf2e3;color:#c98a3e;padding:1px 6px;border-radius:5px;font-weight:600;">[${text}]</span>`;
+}
+
+function buildImpressum() {
+  return buildLegalPage('Impressum', `
+    ${legalSection('Angaben gemäß § 5 TMG', `
+      ${placeholder('Name / Firma / Verein')}<br>
+      ${placeholder('Straße und Hausnummer')}<br>
+      ${placeholder('PLZ und Ort')}<br><br>
+      Vertreten durch: ${placeholder('Name der verantwortlichen Person')}
+    `)}
+    ${legalSection('Kontakt', `
+      Telefon: ${placeholder('Telefonnummer, optional')}<br>
+      E-Mail: ${placeholder('kontakt@example.de')}
+    `)}
+    ${legalSection('Verantwortlich für den Inhalt nach § 18 Abs. 2 MStV', `
+      ${placeholder('Name, Anschrift wie oben')}
+    `)}
+    ${legalSection('Über dieses Angebot', `
+      Dieser Audioguide informiert im Rahmen des Denkmalprojekts „Alte Schraubenfabrik Hagen" über die Geschichte des Standorts Funcke &amp; Hueck.
+    `)}
+    ${legalSection('Hinweis zur Erstellung mit Künstlicher Intelligenz', `
+      Diese Website wurde mit technischer Unterstützung eines KI-Assistenzsystems (Claude von Anthropic) entwickelt. Die inhaltliche Verantwortung für die veröffentlichten Texte liegt beim Betreiber dieser Seite.<br><br>
+      Die gesprochenen Audio-Inhalte der Stationen werden mit KI-basierter Sprachsynthese (ElevenLabs) erzeugt. Es handelt sich nicht um die Stimme einer realen Person.
+    `)}
+    ${legalSection('Streitschlichtung', `
+      Die Europäische Kommission stellt eine Plattform zur Online-Streitbeilegung (OS) bereit: <span style="color:#706f6f;">ec.europa.eu/consumers/odr</span>. Wir sind nicht verpflichtet und nicht bereit, an einem Streitbeilegungsverfahren vor einer Verbraucherschlichtungsstelle teilzunehmen, sofern hier nichts anderes angegeben ist.
+    `)}
+  `);
+}
+
+function buildDatenschutz() {
+  return buildLegalPage('Datenschutz', `
+    ${legalSection('Verantwortlicher', `
+      ${placeholder('Name / Firma / Verein')}, ${placeholder('Anschrift')}<br>
+      E-Mail: ${placeholder('kontakt@example.de')}
+    `)}
+    ${legalSection('Hosting', `
+      Diese Website wird als statische Seite gehostet (${placeholder('z.B. GitHub Pages / Strato')}). Beim Aufruf der Seite verarbeitet der Hosting-Anbieter automatisch technische Zugriffsdaten (z.B. IP-Adresse, Datum und Uhrzeit des Zugriffs, aufgerufene Seite) in sogenannten Server-Logfiles. Diese Daten sind für den technischen Betrieb der Website erforderlich.
+    `)}
+    ${legalSection('Datenbank &amp; Backend (Supabase)', `
+      Die Inhalte der Stationen (Texte, Bilder, Audiodateien) werden über den Dienst Supabase bereitgestellt. Beim Abruf der Stationsdaten wird eine Verbindung zu den Servern von Supabase aufgebaut. Es werden dabei keine personenbezogenen Besucherdaten gespeichert, die über technisch notwendige Verbindungsdaten hinausgehen.
+    `)}
+    ${legalSection('Keine Cookies, kein Tracking', `
+      Diese Website setzt keine Analyse- oder Tracking-Cookies ein. Es findet keine Erstellung von Nutzungsprofilen statt.
+    `)}
+    ${legalSection('Kamerazugriff für den QR-Scanner', `
+      Für die Funktion „QR-Code scannen" fragt Ihr Browser die Erlaubnis ab, auf die Kamera Ihres Geräts zuzugreifen. Das Kamerabild wird ausschließlich lokal auf Ihrem Gerät zur Erkennung des QR-Codes ausgewertet und nicht an einen Server übertragen oder gespeichert.
+    `)}
+    ${legalSection('KI-generierte Inhalte', `
+      Die Sprachausgabe der Stationstexte wird entweder über die Vorlesefunktion Ihres Browsers oder über eine vorab mit KI-Sprachsynthese (ElevenLabs) erzeugte Audiodatei wiedergegeben. Bei der Erstellung der Website kam außerdem ein KI-Assistenzsystem (Claude von Anthropic) unterstützend zum Einsatz.
+    `)}
+    ${legalSection('Ihre Rechte', `
+      Sie haben jederzeit das Recht auf Auskunft, Berichtigung, Löschung oder Einschränkung der Verarbeitung Ihrer personenbezogenen Daten sowie ein Beschwerderecht bei einer Datenschutz-Aufsichtsbehörde. Wenden Sie sich hierzu an die oben genannte Kontaktadresse.
+    `)}
+  `);
 }
 
 function buildLightbox() {
@@ -545,11 +635,15 @@ function buildStart() {
           </div>
         </div>`).join('')}
       </div>
-      <div style="padding:4px 20px 32px;display:flex;justify-content:center;">
+      <div style="padding:4px 20px 20px;display:flex;justify-content:center;">
         <button data-action="go-sources" class="tap" style="background:transparent;border:1.5px solid #d8d2d2;border-radius:999px;padding:11px 22px;font:500 13px 'Hanken Grotesk',sans-serif;color:#3C3C3B;cursor:pointer;display:flex;align-items:center;gap:8px;">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#908d8d" stroke-width="1.9"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
           Quellen &amp; Recherche
         </button>
+      </div>
+      <div style="padding:0 20px 32px;display:flex;justify-content:center;gap:18px;">
+        <span data-action="go-impressum" style="font:400 11.5px 'Hanken Grotesk',sans-serif;color:#b3aeae;cursor:pointer;text-decoration:underline;text-underline-offset:3px;">Impressum</span>
+        <span data-action="go-datenschutz" style="font:400 11.5px 'Hanken Grotesk',sans-serif;color:#b3aeae;cursor:pointer;text-decoration:underline;text-underline-offset:3px;">Datenschutz</span>
       </div>
     </div>
   </div>`;
@@ -795,20 +889,20 @@ function buildAdminLogin() {
 function buildAdmin() {
   return `
   <div style="flex:1;display:flex;flex-direction:column;overflow:hidden;background:#ffffff;">
-    <div style="background:#332f2f;padding:env(safe-area-inset-top,0px) 0 0;flex-shrink:0;">
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:0 18px;height:52px;">
+    <div class="admin-sidebar" style="background:#332f2f;padding:env(safe-area-inset-top,0px) 0 0;flex-shrink:0;">
+      <div class="admin-topbar-row" style="display:flex;align-items:center;justify-content:space-between;padding:0 18px;height:52px;">
         <div style="font:700 13px 'Cormorant Garamond',serif;color:#faf7f7;letter-spacing:-.1px;">Schraubenfabrik Hagen <span style="font:400 10px 'Hanken Grotesk',sans-serif;color:rgba(250,247,247,.35);">Admin</span></div>
         <div style="display:flex;gap:8px;align-items:center;">
           <button data-action="go-start" class="tap" style="background:rgba(255,255,255,.07);border:none;border-radius:7px;padding:5px 10px;font:400 11px 'Hanken Grotesk',sans-serif;color:rgba(255,255,255,.4);cursor:pointer;">← App</button>
           <button data-action="do-logout" class="tap" style="background:rgba(255,255,255,.07);border:none;border-radius:7px;padding:5px 10px;font:400 11px 'Hanken Grotesk',sans-serif;color:rgba(255,255,255,.4);cursor:pointer;">Abmelden</button>
         </div>
       </div>
-      <div style="display:flex;border-top:1px solid rgba(255,255,255,.07);">
+      <div class="admin-nav-tabs" style="display:flex;border-top:1px solid rgba(255,255,255,.07);">
         ${[['dash', 'Dashboard'], ['edit', 'Bearbeiten'], ['qr', 'QR-Codes']].map(([k, l]) => `
-        <button data-action="admin-nav" data-nav="${k}" style="flex:1;background:none;border:none;border-bottom:2.5px solid ${state.aScreen === k ? '#C9A87C' : 'transparent'};padding:12px 4px;font:${state.aScreen === k ? '600' : '400'} 12px 'Hanken Grotesk',sans-serif;color:${state.aScreen === k ? '#C9A87C' : 'rgba(250,247,247,.45)'};cursor:pointer;transition:color .12s;">${l}</button>`).join('')}
+        <button data-action="admin-nav" data-nav="${k}" data-current="${state.aScreen === k}" style="flex:1;background:none;border:none;border-bottom:2.5px solid ${state.aScreen === k ? '#C9A87C' : 'transparent'};padding:12px 4px;font:${state.aScreen === k ? '600' : '400'} 12px 'Hanken Grotesk',sans-serif;color:${state.aScreen === k ? '#C9A87C' : 'rgba(250,247,247,.45)'};cursor:pointer;transition:color .12s;">${l}</button>`).join('')}
       </div>
     </div>
-    <div style="flex:1;overflow:hidden;display:flex;flex-direction:column;">
+    <div class="admin-main" style="flex:1;overflow:hidden;display:flex;flex-direction:column;">
       ${state.aScreen === 'dash' ? buildAdminDash() : state.aScreen === 'edit' ? buildAdminEdit() : buildAdminQr()}
     </div>
   </div>
@@ -838,7 +932,7 @@ function buildAdminDash() {
       </button>
     </div>
     <div class="scroll" style="flex:1;">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:16px 16px 8px;">
+      <div class="admin-stat-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:16px 16px 8px;">
         <div style="background:#fff;border-radius:12px;padding:14px 16px;border:1px solid #e9e4e4;">
           <div style="font:400 9px 'Hanken Grotesk',sans-serif;color:#908d8d;letter-spacing:.12em;text-transform:uppercase;margin-bottom:4px;">Stationen</div>
           <div style="font:700 28px/1 'Cormorant Garamond',serif;color:#3C3C3B;">${statTotal}</div>
@@ -920,6 +1014,8 @@ function buildAdminEdit() {
     </div>
     <div class="scroll" style="flex:1;padding:18px 18px 0;">
       <div style="font:700 18px 'Cormorant Garamond',serif;color:#3C3C3B;margin-bottom:18px;">${st ? 'Station bearbeiten' : 'Neue Station'}</div>
+      <div class="admin-edit-layout" style="display:block;">
+      <div class="admin-edit-main" style="min-width:0;">
       <div style="margin-bottom:15px;">
         <label style="font:600 11px 'Hanken Grotesk',sans-serif;color:#706f6f;letter-spacing:.12em;text-transform:uppercase;display:block;margin-bottom:7px;">Titel</label>
         <input value="${escHtml(title)}" data-field="editTitle" placeholder="z.B. Großer Rittersaal" style="width:100%;border:1.5px solid #e9e4e4;border-radius:11px;padding:13px 14px;font:500 16px 'Cormorant Garamond',serif;color:#3C3C3B;background:#fff;outline:none;"/>
@@ -975,6 +1071,8 @@ function buildAdminEdit() {
           <button data-action="set-status" data-status="pub" style="flex:1;background:${status === 'pub' ? '#e9f4ef' : '#faf7f7'};border:1.5px solid ${status === 'pub' ? '#4c9a78' : '#d8d2d2'};border-radius:10px;padding:10px;font:600 12px 'Hanken Grotesk',sans-serif;color:${status === 'pub' ? '#4c9a78' : '#908d8d'};cursor:pointer;min-height:44px;">Veröffentlicht</button>
         </div>
       </div>
+      </div>
+      <div class="admin-edit-side">
       <div style="background:#fff;border-radius:14px;border:1px solid #e9e4e4;padding:16px;margin-bottom:16px;display:flex;align-items:center;gap:16px;">
         <div style="background:#ffffff;border-radius:8px;padding:8px;flex-shrink:0;">${qrHtml}</div>
         <div style="flex:1;min-width:0;">
@@ -982,6 +1080,8 @@ function buildAdminEdit() {
           <div style="font:400 11px 'Hanken Grotesk',sans-serif;color:#908d8d;word-break:break-all;">${escHtml((st ? stationUrl(st) : `${SITE_URL}/#/s/${slugify(title || 'station')}`).replace(/^https?:\/\//, ''))}</div>
           ${st ? `<button data-action="go-qr" data-id="${st.id}" class="tap" style="margin-top:8px;background:#faf7f7;border:none;border-radius:7px;padding:6px 12px;font:500 11px 'Hanken Grotesk',sans-serif;color:#706f6f;cursor:pointer;">QR exportieren →</button>` : `<div style="margin-top:8px;font:400 11px 'Hanken Grotesk',sans-serif;color:#b3aeae;">Erst speichern, dann exportierbar</div>`}
         </div>
+      </div>
+      </div>
       </div>
       <div style="height:env(safe-area-inset-bottom,32px);min-height:32px;"></div>
     </div>
@@ -1001,6 +1101,8 @@ function buildAdminQr() {
       <div style="font:700 18px 'Cormorant Garamond',serif;color:#3C3C3B;">QR-Codes exportieren</div>
     </div>
     <div class="scroll" style="flex:1;padding:18px 18px 0;">
+      <div class="admin-qr-layout" style="display:block;">
+      <div class="admin-qr-preview-col">
       <div style="margin-bottom:16px;">
         <label style="font:600 11px 'Hanken Grotesk',sans-serif;color:#706f6f;letter-spacing:.12em;text-transform:uppercase;display:block;margin-bottom:7px;">Station</label>
         <select data-field="qrStationId" style="width:100%;border:1.5px solid #e9e4e4;border-radius:11px;padding:12px 14px;font:400 14px 'Hanken Grotesk',sans-serif;color:#3C3C3B;background:#fff;outline:none;cursor:pointer;">
@@ -1014,6 +1116,8 @@ function buildAdminQr() {
           <div style="font:400 11px 'Hanken Grotesk',sans-serif;color:#908d8d;margin-top:3px;">Station ${st.id} · ${escHtml(url.replace(/^https?:\/\//, ''))}</div>
         </div>
       </div>
+      </div>
+      <div class="admin-qr-controls-col">
       <div style="background:#fff;border-radius:14px;border:1px solid #e9e4e4;padding:18px;margin-bottom:14px;">
         <div style="font:600 12px 'Hanken Grotesk',sans-serif;color:#3C3C3B;margin-bottom:14px;">Einstellungen</div>
         <div style="margin-bottom:6px;">
@@ -1040,6 +1144,8 @@ function buildAdminQr() {
         <button data-action="dl-qr-zip" class="tap" style="background:#3C3C3B;border:none;border-radius:11px;padding:15px 18px;font:600 13px 'Hanken Grotesk',sans-serif;color:#faf7f7;cursor:pointer;width:100%;display:flex;align-items:center;justify-content:center;gap:8px;min-height:52px;">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>Alle ${STATIONS.length} QR-Codes als ZIP
         </button>
+      </div>
+      </div>
       </div>
       <div style="height:env(safe-area-inset-bottom,32px);min-height:32px;"></div>
     </div>
@@ -1195,6 +1301,8 @@ function handleAction(action, data) {
     case 'go-station': stopCamera(); openStation(Number(data.idx)); break;
     case 'go-next': openStation((state.stIdx + 1) % STATIONS.length); break;
     case 'go-sources': stopSpeech(); setState({ vScreen: 'sources', playing: false }); break;
+    case 'go-impressum': stopSpeech(); setState({ vScreen: 'impressum', playing: false }); break;
+    case 'go-datenschutz': stopSpeech(); setState({ vScreen: 'datenschutz', playing: false }); break;
     case 'gal-sel': setState({ galIdx: Number(data.gal) }); break;
     case 'gal-prev': setState({ galIdx: (state.galIdx - 1 + GALLERY.length) % GALLERY.length }); break;
     case 'gal-next': setState({ galIdx: (state.galIdx + 1) % GALLERY.length }); break;
@@ -1292,15 +1400,23 @@ document.addEventListener('keydown', e => {
 });
 
 // ── INIT ─────────────────────────────────────────────────────
+function withTimeout(promise, ms, label) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error(`Zeitüberschreitung beim Laden (${label}). Bitte Internetverbindung prüfen.`)), ms)),
+  ]);
+}
+
 async function init() {
+  render(); // sofort die Ladeanzeige zeigen, statt einer leeren Seite bis die Daten da sind
   try {
-    const { data: { session: s } } = await supabase.auth.getSession();
+    const { data: { session: s } } = await withTimeout(supabase.auth.getSession(), 10000, 'Anmeldestatus');
     session = s;
     supabase.auth.onAuthStateChange((event, s2) => {
       session = s2;
       if (event === 'SIGNED_OUT' && state.view === 'admin') setState({ view: 'admin-login', loginErr: '' });
     });
-    await loadData();
+    await withTimeout(loadData(), 15000, 'Stationsdaten');
     dataLoaded = true;
     await applyInitialRoute();
   } catch (e) {
