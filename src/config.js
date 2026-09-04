@@ -8,8 +8,8 @@
 // Siehe README.md, Abschnitt "Einrichtung".
 // ============================================================
 
-export const SUPABASE_URL = 'https://DEIN-PROJEKT.supabase.co';
-export const SUPABASE_ANON_KEY = 'DEIN-ANON-KEY';
+export const SUPABASE_URL = 'https://lcfbwrqacobficoqojsm.supabase.co';
+export const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxjZmJ3cnFhY29iZmljb3FvanNtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg1MTEzMjMsImV4cCI6MjEwNDA4NzMyM30.XxpqtiOdfZtx3AT-fSJtxDHwY4ft1PuEXD_k8UenRL4';
 
 // Die öffentliche Adresse, unter der die App später erreichbar ist
 // (deine Subdomain). Wird benutzt, um die QR-Codes zu erzeugen, die
