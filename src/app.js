@@ -540,7 +540,7 @@ function buildDatenschutz() {
       Diese Website wird als statische Seite gehostet (aktuell über GitHub Pages, perspektivisch über den Webspace-Anbieter Strato). Beim Aufruf der Seite verarbeitet der jeweilige Hosting-Anbieter automatisch technische Zugriffsdaten (z.B. IP-Adresse, Datum und Uhrzeit des Zugriffs, aufgerufene Seite) in sogenannten Server-Logfiles. Diese Daten sind für den technischen Betrieb der Website erforderlich.
     `)}
     ${legalSection('Datenbank &amp; Backend (Supabase)', `
-      Die Inhalte der Stationen (Texte, Bilder, Audiodateien) werden über den Dienst Supabase bereitgestellt. Beim Abruf der Stationsdaten wird eine Verbindung zu den Servern von Supabase aufgebaut. Es werden dabei keine personenbezogenen Besucherdaten gespeichert, die über technisch notwendige Verbindungsdaten hinausgehen.
+      Die Inhalte der Stationen (Texte, Bilder, Audiodateien) werden über den Dienst Supabase bereitgestellt. Das zugehörige Rechenzentrum befindet sich in Frankfurt am Main, Deutschland (EU-Region „eu-central-1"). Eine Übermittlung Ihrer Daten in Länder außerhalb der EU findet dabei nicht statt. Beim Abruf der Stationsdaten wird eine Verbindung zu diesen Servern aufgebaut. Es werden dabei keine personenbezogenen Besucherdaten gespeichert, die über technisch notwendige Verbindungsdaten hinausgehen.
     `)}
     ${legalSection('Keine Cookies, kein Tracking', `
       Diese Website setzt keine Analyse- oder Tracking-Cookies ein. Es findet keine Erstellung von Nutzungsprofilen statt.
