@@ -11,6 +11,7 @@ let SETTINGS = {
   hero_title: 'Alte Schraubenfabrik Hagen',
   hero_subtitle: 'Funcke & Hueck',
   hero_image_url: '',
+  badge_text: '{n} STATIONEN',
   kicker: 'Willkommen',
   stations_kicker: 'Stationen',
   welcome_heading: '{n} Stationen,\n180 Jahre.',
@@ -86,7 +87,7 @@ let state = {
   editImageUrl: null, editImageFile: null,
   editAudioUrl: null, editAudioName: null, editAudioType: null, editAudioFile: null,
   saving: false,
-  homeKicker: '', homeStationsKicker: '',
+  homeKicker: '', homeStationsKicker: '', homeBadgeText: '',
   homeHeroTitle: '', homeHeroSubtitle: '', homeHeroImageUrl: null, homeHeroImageFile: null,
   homeWelcomeHeading: '', homeWelcomeText: '', homeLinkLabel: '', homeLinkUrl: '',
   homeShowScanButton: true, homeBlockOrder: ['buttons', 'banner', 'stations', 'sources'],
@@ -688,7 +689,7 @@ function buildStart() {
       <img src="${hero}" alt="${escHtml(SETTINGS.hero_title)}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"/>
       <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.10) 0%,rgba(0,0,0,.22) 45%,rgba(20,20,19,.90) 100%);"></div>
       <div style="position:absolute;top:env(safe-area-inset-top,16px);right:16px;margin-top:8px;background:rgba(201,168,124,.9);backdrop-filter:blur(8px);padding:6px 14px;border-radius:20px;">
-        <span style="font:600 11px 'Hanken Grotesk',sans-serif;color:#fff;letter-spacing:.6px;">${STATIONS.length} STATIONEN</span>
+        <span style="font:600 11px 'Hanken Grotesk',sans-serif;color:#fff;letter-spacing:.6px;">${escHtml(SETTINGS.badge_text.replace('{n}', STATIONS.length))}</span>
       </div>
       <div style="position:absolute;bottom:20px;left:20px;right:20px;">
         <div style="font:700 36px/1.06 'Cormorant Garamond',serif;color:#fff;letter-spacing:-.3px;text-shadow:0 2px 14px rgba(0,0,0,.3);">${escHtml(SETTINGS.hero_title)}</div>
@@ -1090,6 +1091,11 @@ function buildAdminHome() {
         </div>
       </div>
       <div style="margin-bottom:15px;">
+        <label style="font:600 11px 'Hanken Grotesk',sans-serif;color:#706f6f;letter-spacing:.12em;text-transform:uppercase;display:block;margin-bottom:7px;">Badge oben rechts im Titelbild</label>
+        <input value="${escHtml(state.homeBadgeText)}" data-field="homeBadgeText" placeholder="z.B. {n} STATIONEN" style="width:100%;border:1.5px solid #e9e4e4;border-radius:11px;padding:12px 13px;font:400 13px 'Hanken Grotesk',sans-serif;color:#3C3C3B;background:#fff;outline:none;"/>
+        <div style="font:400 11px 'Hanken Grotesk',sans-serif;color:#908d8d;margin-top:6px;">Tipp: <code>{n}</code> wird automatisch durch die Anzahl der Stationen ersetzt.</div>
+      </div>
+      <div style="margin-bottom:15px;">
         <label style="font:600 11px 'Hanken Grotesk',sans-serif;color:#706f6f;letter-spacing:.12em;text-transform:uppercase;display:block;margin-bottom:7px;">Überschrift im Willkommenstext</label>
         <textarea data-field="homeWelcomeHeading" rows="2" style="width:100%;border:1.5px solid #e9e4e4;border-radius:11px;padding:12px 14px;font:500 16px 'Cormorant Garamond',serif;color:#3C3C3B;background:#fff;outline:none;resize:vertical;">${escHtml(state.homeWelcomeHeading)}</textarea>
         <div style="font:400 11px 'Hanken Grotesk',sans-serif;color:#908d8d;margin-top:6px;">Tipp: <code>{n}</code> wird automatisch durch die Anzahl der Stationen ersetzt.</div>
@@ -1425,7 +1431,7 @@ function bindEvents() {
 function resetHomeEditState() {
   return {
     aScreen: 'home',
-    homeKicker: SETTINGS.kicker, homeStationsKicker: SETTINGS.stations_kicker,
+    homeKicker: SETTINGS.kicker, homeStationsKicker: SETTINGS.stations_kicker, homeBadgeText: SETTINGS.badge_text,
     homeHeroTitle: SETTINGS.hero_title, homeHeroSubtitle: SETTINGS.hero_subtitle,
     homeHeroImageUrl: null, homeHeroImageFile: null,
     homeWelcomeHeading: SETTINGS.welcome_heading, homeWelcomeText: SETTINGS.welcome_text,
@@ -1587,6 +1593,7 @@ async function saveHomeSettings() {
       hero_title: state.homeHeroTitle.trim() || SETTINGS.hero_title,
       hero_subtitle: state.homeHeroSubtitle.trim(),
       hero_image_url: heroImageUrl,
+      badge_text: state.homeBadgeText.trim() || SETTINGS.badge_text,
       stations_kicker: state.homeStationsKicker.trim(),
       welcome_heading: state.homeWelcomeHeading,
       welcome_text: state.homeWelcomeText.trim(),

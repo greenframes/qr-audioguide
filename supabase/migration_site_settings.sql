@@ -8,6 +8,7 @@ create table if not exists public.site_settings (
   hero_title      text not null default 'Alte Schraubenfabrik Hagen',
   hero_subtitle   text not null default 'Funcke & Hueck',
   hero_image_url  text,
+  badge_text      text not null default '{n} STATIONEN',
   kicker          text not null default 'Willkommen',
   stations_kicker text not null default 'Stationen',
   welcome_heading text not null default '{n} Stationen,\n180 Jahre.',
@@ -25,6 +26,7 @@ alter table public.site_settings add column if not exists show_scan_button boole
 alter table public.site_settings add column if not exists home_block_order jsonb not null default '["buttons","banner","stations","sources"]'::jsonb;
 alter table public.site_settings add column if not exists kicker text not null default 'Willkommen';
 alter table public.site_settings add column if not exists stations_kicker text not null default 'Stationen';
+alter table public.site_settings add column if not exists badge_text text not null default '{n} STATIONEN';
 
 drop trigger if exists site_settings_set_updated_at on public.site_settings;
 create trigger site_settings_set_updated_at

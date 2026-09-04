@@ -74,6 +74,7 @@ create table if not exists public.site_settings (
   hero_title      text not null default 'Alte Schraubenfabrik Hagen',
   hero_subtitle   text not null default 'Funcke & Hueck',
   hero_image_url  text,
+  badge_text      text not null default '{n} STATIONEN',
   kicker          text not null default 'Willkommen',
   stations_kicker text not null default 'Stationen',
   welcome_heading text not null default '{n} Stationen,\n180 Jahre.',
