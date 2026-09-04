@@ -775,7 +775,7 @@ function buildStation() {
       <div style="margin:16px 16px 0;background:linear-gradient(148deg,#3C3C3B,#4a4a48);border-radius:20px;padding:18px 20px;box-shadow:0 6px 32px rgba(60,60,59,.3);">
         <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px;">
           <div>
-            <div style="font:400 9px 'Hanken Grotesk',sans-serif;color:rgba(255,255,255,.36);letter-spacing:.14em;text-transform:uppercase;margin-bottom:3px;">Audioguide · ${fmt(st.dur)}</div>
+            <div style="font:400 9px 'Hanken Grotesk',sans-serif;color:rgba(255,255,255,.36);letter-spacing:.14em;text-transform:uppercase;margin-bottom:3px;">Audioguide · ${fmt(st.dur)}${st.audio_url ? ' · KI-Stimme (ElevenLabs)' : ''}</div>
             <div style="font:500 13px/1.3 'Hanken Grotesk',sans-serif;color:rgba(255,255,255,.88);">${escHtml(st.audio_title)}</div>
           </div>
           <div style="width:8px;height:8px;border-radius:50%;background:#C9A87C;margin-top:3px;flex-shrink:0;box-shadow:0 0 7px rgba(201,168,124,.7);"></div>
