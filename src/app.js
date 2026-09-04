@@ -261,22 +261,53 @@ async function uploadToStorage(file, folder) {
 }
 
 // ── SCANNER (Kamera) ─────────────────────────────────────────
-let scanStream = null, scanTimer = null, scanDetector = null, jsQRReady = null;
+// jsQR wird lokal mitgeliefert (src/vendor/jsQR.js, klassisches <script>
+// in index.html) und läuft immer als zuverlässiger Decoder mit - die
+// browsereigene BarcodeDetector-API wird zusätzlich versucht, wo
+// vorhanden, ist aber auf vielen Geräten zwar als API "vorhanden",
+// erkennt in der Praxis aber keine Codes (Kamera geht an, es scannt
+// aber nie). Deshalb nie allein darauf verlassen.
+let scanStream = null, scanTimer = null, scanDetector = null;
+let scanCanvas = null, scanCtx = null, scanBusy = false;
+
 function stopCamera() {
   if (scanTimer) { clearInterval(scanTimer); scanTimer = null; }
   if (scanStream) { scanStream.getTracks().forEach(t => t.stop()); scanStream = null; }
+  scanDetector = null;
+  scanBusy = false;
 }
-function loadJsQR() {
-  if (window.jsQR) return Promise.resolve();
-  if (jsQRReady) return jsQRReady;
-  jsQRReady = new Promise((resolve, reject) => {
-    const s = document.createElement('script');
-    s.src = 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js';
-    s.onload = resolve; s.onerror = reject;
-    document.head.appendChild(s);
-  });
-  return jsQRReady;
+
+function scanWithJsQR(video) {
+  if (typeof window.jsQR !== 'function' || !video.videoWidth) return;
+  const maxW = 480; // kleiner Frame reicht für QR-Erkennung und ist deutlich schneller
+  const scale = Math.min(1, maxW / video.videoWidth);
+  const w = Math.max(1, Math.round(video.videoWidth * scale));
+  const h = Math.max(1, Math.round(video.videoHeight * scale));
+  if (!scanCanvas) { scanCanvas = document.createElement('canvas'); scanCtx = scanCanvas.getContext('2d', { willReadFrequently: true }); }
+  scanCanvas.width = w; scanCanvas.height = h;
+  scanCtx.drawImage(video, 0, 0, w, h);
+  let img;
+  try { img = scanCtx.getImageData(0, 0, w, h); } catch (e) { return; }
+  const code = window.jsQR(img.data, img.width, img.height, { inversionAttempts: 'attemptBoth' });
+  if (code && code.data) handleScanResult(code.data);
 }
+
+function scanFrame(video) {
+  if (scanBusy || !video.videoWidth) return;
+  if (scanDetector) {
+    scanBusy = true;
+    scanDetector.detect(video)
+      .then(codes => {
+        if (codes && codes.length) { handleScanResult(codes[0].rawValue); return; }
+        scanWithJsQR(video);
+      })
+      .catch(() => scanWithJsQR(video))
+      .finally(() => { scanBusy = false; });
+  } else {
+    scanWithJsQR(video);
+  }
+}
+
 async function startCamera() {
   stopCamera();
   setState({ scanState: 'requesting', scanError: '' });
@@ -284,31 +315,16 @@ async function startCamera() {
     const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
     scanStream = stream;
     setState({ scanState: 'live' });
-    requestAnimationFrame(async () => {
+    requestAnimationFrame(() => {
       const video = document.getElementById('scan-video');
       if (!video) return;
       video.srcObject = stream;
       video.play().catch(() => {});
       if ('BarcodeDetector' in window) {
-        scanDetector = new window.BarcodeDetector({ formats: ['qr_code'] });
-        scanTimer = setInterval(async () => {
-          if (!video.videoWidth) return;
-          try { const codes = await scanDetector.detect(video); if (codes && codes.length) handleScanResult(codes[0].rawValue); }
-          catch (e) {}
-        }, 350);
-      } else {
-        try { await loadJsQR(); } catch (e) { return; }
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d', { willReadFrequently: true });
-        scanTimer = setInterval(() => {
-          if (!video.videoWidth || !window.jsQR) return;
-          canvas.width = video.videoWidth; canvas.height = video.videoHeight;
-          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-          const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
-          const code = window.jsQR(img.data, img.width, img.height);
-          if (code && code.data) handleScanResult(code.data);
-        }, 350);
+        try { scanDetector = new window.BarcodeDetector({ formats: ['qr_code'] }); }
+        catch (e) { scanDetector = null; }
       }
+      scanTimer = setInterval(() => scanFrame(video), 300);
     });
   } catch (e) {
     let msg = 'Kamera konnte nicht gestartet werden.';
