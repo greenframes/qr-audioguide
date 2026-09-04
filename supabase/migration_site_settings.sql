@@ -8,6 +8,8 @@ create table if not exists public.site_settings (
   hero_title      text not null default 'Alte Schraubenfabrik Hagen',
   hero_subtitle   text not null default 'Funcke & Hueck',
   hero_image_url  text,
+  kicker          text not null default 'Willkommen',
+  stations_kicker text not null default 'Stationen',
   welcome_heading text not null default '{n} Stationen,\n180 Jahre.',
   welcome_text    text not null default 'Von der ersten Dampfmaschine Hagens 1844 über 1.500 Beschäftigte im Jahr 1913 bis zur denkmalgerechten Sanierung heute. Jede Station: ein kurzer Text und ein Audioguide von etwa drei Minuten.',
   link_label      text not null default 'Mehr auf alte-schraubenfabrik.de',
@@ -18,9 +20,11 @@ create table if not exists public.site_settings (
 );
 
 -- Falls die Tabelle schon aus einem früheren Lauf dieser Datei existiert,
--- aber die beiden neuen Spalten noch fehlen:
+-- aber neue Spalten noch fehlen:
 alter table public.site_settings add column if not exists show_scan_button boolean not null default true;
 alter table public.site_settings add column if not exists home_block_order jsonb not null default '["buttons","banner","stations","sources"]'::jsonb;
+alter table public.site_settings add column if not exists kicker text not null default 'Willkommen';
+alter table public.site_settings add column if not exists stations_kicker text not null default 'Stationen';
 
 drop trigger if exists site_settings_set_updated_at on public.site_settings;
 create trigger site_settings_set_updated_at

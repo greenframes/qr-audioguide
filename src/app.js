@@ -11,6 +11,8 @@ let SETTINGS = {
   hero_title: 'Alte Schraubenfabrik Hagen',
   hero_subtitle: 'Funcke & Hueck',
   hero_image_url: '',
+  kicker: 'Willkommen',
+  stations_kicker: 'Stationen',
   welcome_heading: '{n} Stationen,\n180 Jahre.',
   welcome_text: 'Von der ersten Dampfmaschine Hagens 1844 über 1.500 Beschäftigte im Jahr 1913 bis zur denkmalgerechten Sanierung heute. Jede Station: ein kurzer Text und ein Audioguide von etwa drei Minuten.',
   link_label: 'Mehr auf alte-schraubenfabrik.de',
@@ -84,6 +86,7 @@ let state = {
   editImageUrl: null, editImageFile: null,
   editAudioUrl: null, editAudioName: null, editAudioType: null, editAudioFile: null,
   saving: false,
+  homeKicker: '', homeStationsKicker: '',
   homeHeroTitle: '', homeHeroSubtitle: '', homeHeroImageUrl: null, homeHeroImageFile: null,
   homeWelcomeHeading: '', homeWelcomeText: '', homeLinkLabel: '', homeLinkUrl: '',
   homeShowScanButton: true, homeBlockOrder: ['buttons', 'banner', 'stations', 'sources'],
@@ -645,7 +648,7 @@ function buildHomeBlocksInOrder() {
       </div>` : '',
     stations: `
       <div style="padding:0 20px 10px;display:flex;align-items:center;justify-content:space-between;">
-        <span style="font:600 10px 'Hanken Grotesk',sans-serif;color:#908d8d;letter-spacing:.14em;text-transform:uppercase;">Stationen</span>
+        <span style="font:600 10px 'Hanken Grotesk',sans-serif;color:#908d8d;letter-spacing:.14em;text-transform:uppercase;">${escHtml(SETTINGS.stations_kicker)}</span>
         <span data-action="go-list" style="font:500 13px 'Hanken Grotesk',sans-serif;color:#C9A87C;cursor:pointer;">Alle →</span>
       </div>
       <div class="hscroll" style="gap:12px;padding:0 20px 28px;">
@@ -694,7 +697,7 @@ function buildStart() {
     </div>
     <div class="scroll" style="flex:1;background:#faf7f7;">
       <div style="padding:22px 20px 10px;">
-        <div style="font:400 10px 'Hanken Grotesk',sans-serif;color:#C9A87C;letter-spacing:.14em;text-transform:uppercase;margin-bottom:7px;">Willkommen</div>
+        <div style="font:400 10px 'Hanken Grotesk',sans-serif;color:#C9A87C;letter-spacing:.14em;text-transform:uppercase;margin-bottom:7px;">${escHtml(SETTINGS.kicker)}</div>
         <h1 style="font:600 29px/1.16 'Cormorant Garamond',serif;color:#3C3C3B;margin:0 0 12px;letter-spacing:-.2px;">${heading}</h1>
         <p style="font:400 15.5px/1.7 'Hanken Grotesk',sans-serif;color:#706f6f;margin:0 0 22px;text-wrap:pretty;">${escHtml(SETTINGS.welcome_text)}</p>
       </div>
@@ -1062,6 +1065,10 @@ function buildAdminHome() {
       <div class="admin-edit-layout" style="display:block;">
       <div class="admin-edit-main" style="min-width:0;">
       <div style="margin-bottom:15px;">
+        <label style="font:600 11px 'Hanken Grotesk',sans-serif;color:#706f6f;letter-spacing:.12em;text-transform:uppercase;display:block;margin-bottom:7px;">Kicker (kleiner Text über der Überschrift)</label>
+        <input value="${escHtml(state.homeKicker)}" data-field="homeKicker" placeholder="z.B. Willkommen" style="width:100%;border:1.5px solid #e9e4e4;border-radius:11px;padding:12px 13px;font:400 13px 'Hanken Grotesk',sans-serif;color:#3C3C3B;background:#fff;outline:none;"/>
+      </div>
+      <div style="margin-bottom:15px;">
         <label style="font:600 11px 'Hanken Grotesk',sans-serif;color:#706f6f;letter-spacing:.12em;text-transform:uppercase;display:block;margin-bottom:7px;">Titel (großer Aufmacher-Text)</label>
         <input value="${escHtml(state.homeHeroTitle)}" data-field="homeHeroTitle" style="width:100%;border:1.5px solid #e9e4e4;border-radius:11px;padding:13px 14px;font:500 16px 'Cormorant Garamond',serif;color:#3C3C3B;background:#fff;outline:none;"/>
       </div>
@@ -1090,6 +1097,10 @@ function buildAdminHome() {
       <div style="margin-bottom:15px;">
         <label style="font:600 11px 'Hanken Grotesk',sans-serif;color:#706f6f;letter-spacing:.12em;text-transform:uppercase;display:block;margin-bottom:7px;">Willkommenstext</label>
         <textarea data-field="homeWelcomeText" rows="5" style="width:100%;border:1.5px solid #e9e4e4;border-radius:11px;padding:12px 14px;font:400 13px/1.65 'Hanken Grotesk',sans-serif;color:#3C3C3B;background:#fff;outline:none;resize:vertical;">${escHtml(state.homeWelcomeText)}</textarea>
+      </div>
+      <div style="margin-bottom:15px;">
+        <label style="font:600 11px 'Hanken Grotesk',sans-serif;color:#706f6f;letter-spacing:.12em;text-transform:uppercase;display:block;margin-bottom:7px;">Kicker über der Stationsvorschau</label>
+        <input value="${escHtml(state.homeStationsKicker)}" data-field="homeStationsKicker" placeholder="z.B. Stationen" style="width:100%;border:1.5px solid #e9e4e4;border-radius:11px;padding:12px 13px;font:400 13px 'Hanken Grotesk',sans-serif;color:#3C3C3B;background:#fff;outline:none;"/>
       </div>
       </div>
       <div class="admin-edit-side">
@@ -1414,6 +1425,7 @@ function bindEvents() {
 function resetHomeEditState() {
   return {
     aScreen: 'home',
+    homeKicker: SETTINGS.kicker, homeStationsKicker: SETTINGS.stations_kicker,
     homeHeroTitle: SETTINGS.hero_title, homeHeroSubtitle: SETTINGS.hero_subtitle,
     homeHeroImageUrl: null, homeHeroImageFile: null,
     homeWelcomeHeading: SETTINGS.welcome_heading, homeWelcomeText: SETTINGS.welcome_text,
@@ -1571,9 +1583,11 @@ async function saveHomeSettings() {
     if (state.homeHeroImageFile) heroImageUrl = await uploadToStorage(state.homeHeroImageFile, 'images');
 
     const payload = {
+      kicker: state.homeKicker.trim(),
       hero_title: state.homeHeroTitle.trim() || SETTINGS.hero_title,
       hero_subtitle: state.homeHeroSubtitle.trim(),
       hero_image_url: heroImageUrl,
+      stations_kicker: state.homeStationsKicker.trim(),
       welcome_heading: state.homeWelcomeHeading,
       welcome_text: state.homeWelcomeText.trim(),
       link_label: state.homeLinkLabel.trim(),
