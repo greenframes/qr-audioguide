@@ -1,0 +1,12 @@
+{
+  "name": "qr-audioguide-seed",
+  "private": true,
+  "type": "module",
+  "description": "Nur für das einmalige Einrichten der Datenbank (scripts/seed.mjs) - die App selbst braucht kein npm/Build, siehe README.md.",
+  "scripts": {
+    "seed": "node --env-file=.env scripts/seed.mjs"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.4"
+  }
+}
