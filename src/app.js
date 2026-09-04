@@ -15,6 +15,14 @@ let SETTINGS = {
   welcome_text: 'Von der ersten Dampfmaschine Hagens 1844 über 1.500 Beschäftigte im Jahr 1913 bis zur denkmalgerechten Sanierung heute. Jede Station: ein kurzer Text und ein Audioguide von etwa drei Minuten.',
   link_label: 'Mehr auf alte-schraubenfabrik.de',
   link_url: 'https://www.alte-schraubenfabrik.de',
+  show_scan_button: true,
+  home_block_order: ['buttons', 'banner', 'stations', 'sources'],
+};
+const HOME_BLOCK_LABELS = {
+  buttons: 'Buttons (QR-Scan / Alle Stationen)',
+  banner: 'Projekt-Banner',
+  stations: 'Stationsvorschau',
+  sources: 'Quellen-Button',
 };
 let dataLoaded = false;
 let dataError = null;
@@ -78,6 +86,7 @@ let state = {
   saving: false,
   homeHeroTitle: '', homeHeroSubtitle: '', homeHeroImageUrl: null, homeHeroImageFile: null,
   homeWelcomeHeading: '', homeWelcomeText: '', homeLinkLabel: '', homeLinkUrl: '',
+  homeShowScanButton: true, homeBlockOrder: ['buttons', 'banner', 'stations', 'sources'],
   homeSaving: false,
   searchQ: '', filterStatus: 'all',
   qrSize: 168,
@@ -386,15 +395,24 @@ async function applyInitialRoute() {
 }
 
 // ── RENDER ────────────────────────────────────────────────────
+let lastScreenKey = null;
 function render() {
   const app = document.getElementById('app');
   if (!app) return;
+  // Scrollposition nur beibehalten, wenn es sich um den selben Bildschirm
+  // handelt (z.B. Tippen in ein Suchfeld) - beim Wechsel auf eine neue
+  // Station/Ansicht soll immer von oben begonnen werden.
+  const screenKey = `${state.view}|${state.vScreen}|${state.stIdx}|${state.aScreen}|${state.editIdx}`;
+  const sameScreen = screenKey === lastScreenKey;
   const prev = app.querySelectorAll('.scroll');
   const tops = Array.from(prev).map(el => el.scrollTop);
   app.innerHTML = buildApp();
   app.className = (state.view === 'admin' || state.view === 'admin-login') ? 'mode-admin' : 'mode-visitor';
-  const next = app.querySelectorAll('.scroll');
-  next.forEach((el, i) => { if (tops[i] != null) el.scrollTop = tops[i]; });
+  if (sameScreen) {
+    const next = app.querySelectorAll('.scroll');
+    next.forEach((el, i) => { if (tops[i] != null) el.scrollTop = tops[i]; });
+  }
+  lastScreenKey = screenKey;
   bindEvents();
 }
 
@@ -607,6 +625,57 @@ function buildLightbox() {
   </div>`;
 }
 
+function buildHomeBlocksInOrder() {
+  const blocks = {
+    buttons: `
+      <div style="padding:0 20px;display:flex;flex-direction:column;gap:11px;margin-bottom:28px;">
+        ${SETTINGS.show_scan_button ? `
+        <button data-action="go-scanner" class="tap" style="background:#3C3C3B;color:#faf7f7;border:none;border-radius:999px;padding:18px 26px;font:600 15px 'Hanken Grotesk',sans-serif;display:flex;align-items:center;justify-content:center;gap:10px;cursor:pointer;width:100%;letter-spacing:.1px;min-height:56px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="5" y="5" width="3" height="3" fill="currentColor" stroke="none"/><rect x="16" y="5" width="3" height="3" fill="currentColor" stroke="none"/><rect x="5" y="16" width="3" height="3" fill="currentColor" stroke="none"/><line x1="14" y1="14" x2="21" y2="14"/><line x1="14" y1="17" x2="17" y2="17"/><line x1="20" y1="17" x2="21" y2="17"/><line x1="14" y1="20" x2="17" y2="20"/><line x1="20" y1="20" x2="21" y2="20"/></svg>
+          QR-Code scannen
+        </button>` : ''}
+        <button data-action="go-list" class="tap" style="background:transparent;color:#3C3C3B;border:1.5px solid #d8d2d2;border-radius:999px;padding:17px 26px;font:500 15px 'Hanken Grotesk',sans-serif;cursor:pointer;width:100%;min-height:56px;">Alle Stationen ansehen</button>
+      </div>`,
+    banner: SETTINGS.link_url ? `
+      <div style="padding:0 20px;margin-bottom:24px;">
+        <a href="${escHtml(SETTINGS.link_url)}" target="_blank" rel="noopener noreferrer" class="tap" style="display:flex;align-items:center;justify-content:space-between;gap:12px;background:linear-gradient(135deg,#C9A87C,#b8925f);border-radius:16px;padding:16px 18px;text-decoration:none;box-shadow:0 6px 20px rgba(201,168,124,.35);">
+          <div style="font:600 15px 'Hanken Grotesk',sans-serif;color:#fff;">${escHtml(SETTINGS.link_label)}</div>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.3" style="flex-shrink:0;"><path d="M7 17L17 7M17 7H9M17 7v8"/></svg>
+        </a>
+      </div>` : '',
+    stations: `
+      <div style="padding:0 20px 10px;display:flex;align-items:center;justify-content:space-between;">
+        <span style="font:600 10px 'Hanken Grotesk',sans-serif;color:#908d8d;letter-spacing:.14em;text-transform:uppercase;">Stationen</span>
+        <span data-action="go-list" style="font:500 13px 'Hanken Grotesk',sans-serif;color:#C9A87C;cursor:pointer;">Alle →</span>
+      </div>
+      <div class="hscroll" style="gap:12px;padding:0 20px 28px;">
+        ${STATIONS.slice(0, 5).map((st) => `
+        <div data-action="go-station" data-idx="${STATIONS.indexOf(st)}" class="tap" style="flex:none;width:min(48vw,160px);background:#fff;border-radius:16px;overflow:hidden;cursor:pointer;box-shadow:0 2px 14px rgba(60,60,59,.08);">
+          <div style="height:100px;position:relative;overflow:hidden;background:#3C3C3B;">
+            <img src="${st.image_url || ''}" alt="${escHtml(st.title)}" loading="lazy" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"/>
+            <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.35),transparent 60%);"></div>
+            <div style="position:absolute;top:9px;left:9px;background:rgba(60,60,59,.82);backdrop-filter:blur(4px);border-radius:6px;padding:3px 8px;font:700 9px 'Hanken Grotesk',sans-serif;color:#fff;letter-spacing:.06em;">${st.id}</div>
+          </div>
+          <div style="padding:10px 12px 13px;">
+            <div style="font:600 12px/1.3 'Hanken Grotesk',sans-serif;color:#3C3C3B;">${escHtml(st.title)}</div>
+            <div style="font:400 11px 'Hanken Grotesk',sans-serif;color:#908d8d;margin-top:4px;">${fmt(st.dur)} · ${escHtml(st.era)}</div>
+          </div>
+        </div>`).join('')}
+      </div>`,
+    sources: `
+      <div style="padding:4px 20px 20px;display:flex;justify-content:center;">
+        <button data-action="go-sources" class="tap" style="background:transparent;border:1.5px solid #d8d2d2;border-radius:999px;padding:11px 22px;font:500 13px 'Hanken Grotesk',sans-serif;color:#3C3C3B;cursor:pointer;display:flex;align-items:center;gap:8px;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#908d8d" stroke-width="1.9"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
+          Quellen &amp; Recherche
+        </button>
+      </div>`,
+  };
+  const order = Array.isArray(SETTINGS.home_block_order) && SETTINGS.home_block_order.length
+    ? SETTINGS.home_block_order
+    : ['buttons', 'banner', 'stations', 'sources'];
+  return order.map(key => blocks[key] || '').join('');
+}
+
 function buildStart() {
   const hero = SETTINGS.hero_image_url || GALLERY[0]?.src || STATIONS[0]?.image_url || '';
   const heading = escHtml(SETTINGS.welcome_heading.replace('{n}', STATIONS.length)).replace(/\n/g, '<br>');
@@ -628,46 +697,8 @@ function buildStart() {
         <div style="font:400 10px 'Hanken Grotesk',sans-serif;color:#C9A87C;letter-spacing:.14em;text-transform:uppercase;margin-bottom:7px;">Willkommen</div>
         <h1 style="font:600 29px/1.16 'Cormorant Garamond',serif;color:#3C3C3B;margin:0 0 12px;letter-spacing:-.2px;">${heading}</h1>
         <p style="font:400 15.5px/1.7 'Hanken Grotesk',sans-serif;color:#706f6f;margin:0 0 22px;text-wrap:pretty;">${escHtml(SETTINGS.welcome_text)}</p>
-        <div style="display:flex;flex-direction:column;gap:11px;margin-bottom:28px;">
-          <button data-action="go-scanner" class="tap" style="background:#3C3C3B;color:#faf7f7;border:none;border-radius:999px;padding:18px 26px;font:600 15px 'Hanken Grotesk',sans-serif;display:flex;align-items:center;justify-content:center;gap:10px;cursor:pointer;width:100%;letter-spacing:.1px;min-height:56px;">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="5" y="5" width="3" height="3" fill="currentColor" stroke="none"/><rect x="16" y="5" width="3" height="3" fill="currentColor" stroke="none"/><rect x="5" y="16" width="3" height="3" fill="currentColor" stroke="none"/><line x1="14" y1="14" x2="21" y2="14"/><line x1="14" y1="17" x2="17" y2="17"/><line x1="20" y1="17" x2="21" y2="17"/><line x1="14" y1="20" x2="17" y2="20"/><line x1="20" y1="20" x2="21" y2="20"/></svg>
-            QR-Code scannen
-          </button>
-          <button data-action="go-list" class="tap" style="background:transparent;color:#3C3C3B;border:1.5px solid #d8d2d2;border-radius:999px;padding:17px 26px;font:500 15px 'Hanken Grotesk',sans-serif;cursor:pointer;width:100%;min-height:56px;">Alle Stationen ansehen</button>
-        </div>
-        ${SETTINGS.link_url ? `
-        <a href="${escHtml(SETTINGS.link_url)}" target="_blank" rel="noopener noreferrer" class="tap" style="display:flex;align-items:center;justify-content:space-between;gap:12px;background:linear-gradient(135deg,#C9A87C,#b8925f);border-radius:16px;padding:16px 18px;margin-bottom:24px;text-decoration:none;box-shadow:0 6px 20px rgba(201,168,124,.35);">
-          <div>
-            <div style="font:700 10px 'Hanken Grotesk',sans-serif;color:rgba(255,255,255,.85);letter-spacing:.12em;text-transform:uppercase;margin-bottom:3px;">Das Projekt</div>
-            <div style="font:600 15px 'Hanken Grotesk',sans-serif;color:#fff;">${escHtml(SETTINGS.link_label)}</div>
-          </div>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.3" style="flex-shrink:0;"><path d="M7 17L17 7M17 7H9M17 7v8"/></svg>
-        </a>` : ''}
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
-          <span style="font:600 10px 'Hanken Grotesk',sans-serif;color:#908d8d;letter-spacing:.14em;text-transform:uppercase;">Stationen</span>
-          <span data-action="go-list" style="font:500 13px 'Hanken Grotesk',sans-serif;color:#C9A87C;cursor:pointer;">Alle →</span>
-        </div>
       </div>
-      <div class="hscroll" style="gap:12px;padding:0 20px 28px;">
-        ${STATIONS.slice(0, 5).map((st) => `
-        <div data-action="go-station" data-idx="${STATIONS.indexOf(st)}" class="tap" style="flex:none;width:min(48vw,160px);background:#fff;border-radius:16px;overflow:hidden;cursor:pointer;box-shadow:0 2px 14px rgba(60,60,59,.08);">
-          <div style="height:100px;position:relative;overflow:hidden;background:#3C3C3B;">
-            <img src="${st.image_url || ''}" alt="${escHtml(st.title)}" loading="lazy" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"/>
-            <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.35),transparent 60%);"></div>
-            <div style="position:absolute;top:9px;left:9px;background:rgba(60,60,59,.82);backdrop-filter:blur(4px);border-radius:6px;padding:3px 8px;font:700 9px 'Hanken Grotesk',sans-serif;color:#fff;letter-spacing:.06em;">${st.id}</div>
-          </div>
-          <div style="padding:10px 12px 13px;">
-            <div style="font:600 12px/1.3 'Hanken Grotesk',sans-serif;color:#3C3C3B;">${escHtml(st.title)}</div>
-            <div style="font:400 11px 'Hanken Grotesk',sans-serif;color:#908d8d;margin-top:4px;">${fmt(st.dur)} · ${escHtml(st.era)}</div>
-          </div>
-        </div>`).join('')}
-      </div>
-      <div style="padding:4px 20px 20px;display:flex;justify-content:center;">
-        <button data-action="go-sources" class="tap" style="background:transparent;border:1.5px solid #d8d2d2;border-radius:999px;padding:11px 22px;font:500 13px 'Hanken Grotesk',sans-serif;color:#3C3C3B;cursor:pointer;display:flex;align-items:center;gap:8px;">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#908d8d" stroke-width="1.9"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
-          Quellen &amp; Recherche
-        </button>
-      </div>
+      ${buildHomeBlocksInOrder()}
       <div style="padding:0 20px 32px;display:flex;justify-content:center;gap:18px;">
         <span data-action="go-impressum" style="font:400 11.5px 'Hanken Grotesk',sans-serif;color:#b3aeae;cursor:pointer;text-decoration:underline;text-underline-offset:3px;">Impressum</span>
         <span data-action="go-datenschutz" style="font:400 11.5px 'Hanken Grotesk',sans-serif;color:#b3aeae;cursor:pointer;text-decoration:underline;text-underline-offset:3px;">Datenschutz</span>
@@ -1063,6 +1094,30 @@ function buildAdminHome() {
       </div>
       <div class="admin-edit-side">
       <div style="background:#fff;border-radius:14px;border:1px solid #e9e4e4;padding:16px;margin-bottom:16px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <div>
+            <div style="font:600 12px 'Hanken Grotesk',sans-serif;color:#3C3C3B;">QR-Scan-Button</div>
+            <div style="font:400 11px 'Hanken Grotesk',sans-serif;color:#908d8d;margin-top:2px;">„QR-Code scannen" auf der Startseite anzeigen</div>
+          </div>
+          <div data-action="toggle-scan-button" style="width:44px;height:24px;border-radius:12px;background:${state.homeShowScanButton ? '#C9A87C' : 'rgba(60,60,59,.18)'};position:relative;cursor:pointer;flex-shrink:0;transition:background .15s;">
+            <div style="position:absolute;top:3px;${state.homeShowScanButton ? 'right:3px' : 'left:3px'};width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.2);"></div>
+          </div>
+        </div>
+      </div>
+      <div style="background:#fff;border-radius:14px;border:1px solid #e9e4e4;padding:16px;margin-bottom:16px;">
+        <div style="font:600 11px 'Hanken Grotesk',sans-serif;color:#706f6f;letter-spacing:.12em;text-transform:uppercase;margin-bottom:12px;">Reihenfolge auf der Startseite</div>
+        ${state.homeBlockOrder.map((key, i) => `
+        <div style="display:flex;align-items:center;gap:8px;padding:9px 10px;background:#faf7f7;border-radius:9px;margin-bottom:6px;">
+          <span style="flex:1;font:500 12px 'Hanken Grotesk',sans-serif;color:#3C3C3B;">${escHtml(HOME_BLOCK_LABELS[key] || key)}</span>
+          <button data-action="move-block" data-dir="up" data-idx="${i}" ${i === 0 ? 'disabled' : ''} class="tap" style="width:26px;height:26px;border-radius:7px;border:1px solid #e9e4e4;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:${i === 0 ? .35 : 1};">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#706f6f" stroke-width="2.5"><path d="M18 15l-6-6-6 6"/></svg>
+          </button>
+          <button data-action="move-block" data-dir="down" data-idx="${i}" ${i === state.homeBlockOrder.length - 1 ? 'disabled' : ''} class="tap" style="width:26px;height:26px;border-radius:7px;border:1px solid #e9e4e4;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:${i === state.homeBlockOrder.length - 1 ? .35 : 1};">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#706f6f" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+        </div>`).join('')}
+      </div>
+      <div style="background:#fff;border-radius:14px;border:1px solid #e9e4e4;padding:16px;margin-bottom:16px;">
         <div style="font:600 11px 'Hanken Grotesk',sans-serif;color:#706f6f;letter-spacing:.12em;text-transform:uppercase;margin-bottom:12px;">Auffälliger Link (Traffic-Banner)</div>
         <div style="margin-bottom:12px;">
           <label style="font:500 11px 'Hanken Grotesk',sans-serif;color:#706f6f;display:block;margin-bottom:6px;">Beschriftung</label>
@@ -1363,6 +1418,9 @@ function resetHomeEditState() {
     homeHeroImageUrl: null, homeHeroImageFile: null,
     homeWelcomeHeading: SETTINGS.welcome_heading, homeWelcomeText: SETTINGS.welcome_text,
     homeLinkLabel: SETTINGS.link_label, homeLinkUrl: SETTINGS.link_url,
+    homeShowScanButton: SETTINGS.show_scan_button !== false,
+    homeBlockOrder: Array.isArray(SETTINGS.home_block_order) && SETTINGS.home_block_order.length
+      ? [...SETTINGS.home_block_order] : ['buttons', 'banner', 'stations', 'sources'],
   };
 }
 
@@ -1427,6 +1485,16 @@ function handleAction(action, data) {
     case 'save-draft': saveStationEdits('draft'); break;
     case 'save-pub': saveStationEdits('pub'); break;
     case 'save-home': saveHomeSettings(); break;
+    case 'toggle-scan-button': setState({ homeShowScanButton: !state.homeShowScanButton }); break;
+    case 'move-block': {
+      const i = Number(data.idx);
+      const j = data.dir === 'up' ? i - 1 : i + 1;
+      const order = [...state.homeBlockOrder];
+      if (j < 0 || j >= order.length) break;
+      [order[i], order[j]] = [order[j], order[i]];
+      setState({ homeBlockOrder: order });
+      break;
+    }
     case 'dl-qr': {
       const st = STATIONS.find(s => s.id === state.qrStationId) || STATIONS[0];
       if (st) downloadQR(st, data.fmt);
@@ -1510,6 +1578,8 @@ async function saveHomeSettings() {
       welcome_text: state.homeWelcomeText.trim(),
       link_label: state.homeLinkLabel.trim(),
       link_url: state.homeLinkUrl.trim(),
+      show_scan_button: state.homeShowScanButton,
+      home_block_order: state.homeBlockOrder,
     };
     const { data, error } = await supabase.from('site_settings').update(payload).eq('id', 'main').select().single();
     if (error) throw error;
