@@ -496,24 +496,25 @@ function legalSection(heading, bodyHtml) {
     <div style="font:400 14px/1.75 'Hanken Grotesk',sans-serif;color:#454444;">${bodyHtml}</div>
   </div>`;
 }
-function placeholder(text) {
-  return `<span style="background:#fbf2e3;color:#c98a3e;padding:1px 6px;border-radius:5px;font-weight:600;">[${text}]</span>`;
-}
-
 function buildImpressum() {
   return buildLegalPage('Impressum', `
     ${legalSection('Angaben gemäß § 5 TMG', `
-      ${placeholder('Name / Firma / Verein')}<br>
-      ${placeholder('Straße und Hausnummer')}<br>
-      ${placeholder('PLZ und Ort')}<br><br>
-      Vertreten durch: ${placeholder('Name der verantwortlichen Person')}
+      P20 Baudenkmal GmbH<br>
+      Plessenstraße 20<br>
+      D-58089 Hagen<br><br>
+      Geschäftsführung: Olivia Aschke und Dr. Thomas Schmidt-Hansen
     `)}
     ${legalSection('Kontakt', `
-      Telefon: ${placeholder('Telefonnummer, optional')}<br>
-      E-Mail: ${placeholder('kontakt@example.de')}
+      Telefon: 02331-3770445<br>
+      E-Mail: info@alte-schraubenfabrik.de
+    `)}
+    ${legalSection('Registereintrag', `
+      Gesellschaft mit beschränkter Haftung, Sitz Hagen<br>
+      Registergericht: AG Hagen, HRB 11060<br>
+      USt-IdNr.: DE320182079
     `)}
     ${legalSection('Verantwortlich für den Inhalt nach § 18 Abs. 2 MStV', `
-      ${placeholder('Name, Anschrift wie oben')}
+      Olivia Aschke und Dr. Thomas Schmidt-Hansen, Anschrift wie oben
     `)}
     ${legalSection('Über dieses Angebot', `
       Dieser Audioguide informiert im Rahmen des Denkmalprojekts „Alte Schraubenfabrik Hagen" über die Geschichte des Standorts Funcke &amp; Hueck.
@@ -531,11 +532,12 @@ function buildImpressum() {
 function buildDatenschutz() {
   return buildLegalPage('Datenschutz', `
     ${legalSection('Verantwortlicher', `
-      ${placeholder('Name / Firma / Verein')}, ${placeholder('Anschrift')}<br>
-      E-Mail: ${placeholder('kontakt@example.de')}
+      P20 Baudenkmal GmbH, Plessenstraße 20, D-58089 Hagen<br>
+      Telefon: 02331-3770445<br>
+      E-Mail: info@alte-schraubenfabrik.de
     `)}
     ${legalSection('Hosting', `
-      Diese Website wird als statische Seite gehostet (${placeholder('z.B. GitHub Pages / Strato')}). Beim Aufruf der Seite verarbeitet der Hosting-Anbieter automatisch technische Zugriffsdaten (z.B. IP-Adresse, Datum und Uhrzeit des Zugriffs, aufgerufene Seite) in sogenannten Server-Logfiles. Diese Daten sind für den technischen Betrieb der Website erforderlich.
+      Diese Website wird als statische Seite gehostet (aktuell über GitHub Pages, perspektivisch über den Webspace-Anbieter Strato). Beim Aufruf der Seite verarbeitet der jeweilige Hosting-Anbieter automatisch technische Zugriffsdaten (z.B. IP-Adresse, Datum und Uhrzeit des Zugriffs, aufgerufene Seite) in sogenannten Server-Logfiles. Diese Daten sind für den technischen Betrieb der Website erforderlich.
     `)}
     ${legalSection('Datenbank &amp; Backend (Supabase)', `
       Die Inhalte der Stationen (Texte, Bilder, Audiodateien) werden über den Dienst Supabase bereitgestellt. Beim Abruf der Stationsdaten wird eine Verbindung zu den Servern von Supabase aufgebaut. Es werden dabei keine personenbezogenen Besucherdaten gespeichert, die über technisch notwendige Verbindungsdaten hinausgehen.
