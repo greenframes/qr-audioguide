@@ -272,7 +272,7 @@ async function loadData() {
   if (stRes.error) throw stRes.error;
   if (galRes.error) throw galRes.error;
   STATIONS = stRes.data || [];
-  GALLERY = (galRes.data || []).map(g => ({ src: g.image_url, cap: g.caption }));
+  GALLERY = (galRes.data || []).map(g => ({ id: g.id, sort_order: g.sort_order, src: g.image_url, cap: g.caption }));
   // site_settings ist optional (z.B. bei einer noch nicht migrierten Datenbank) -
   // dann bleiben einfach die eingebauten Standardtexte erhalten.
   if (!setRes.error && setRes.data) SETTINGS = { ...SETTINGS, ...setRes.data };
@@ -960,12 +960,12 @@ function buildAdmin() {
         </div>
       </div>
       <div class="admin-nav-tabs" style="display:flex;border-top:1px solid rgba(255,255,255,.07);">
-        ${[['dash', 'Dashboard'], ['home', 'Startseite'], ['edit', 'Bearbeiten'], ['qr', 'QR-Codes']].map(([k, l]) => `
+        ${[['dash', 'Dashboard'], ['home', 'Startseite'], ['edit', 'Bearbeiten'], ['gallery', 'Galerie'], ['qr', 'QR-Codes']].map(([k, l]) => `
         <button data-action="admin-nav" data-nav="${k}" data-current="${state.aScreen === k}" style="flex:1;background:none;border:none;border-bottom:2.5px solid ${state.aScreen === k ? '#C9A87C' : 'transparent'};padding:12px 4px;font:${state.aScreen === k ? '600' : '400'} 12px 'Hanken Grotesk',sans-serif;color:${state.aScreen === k ? '#C9A87C' : 'rgba(250,247,247,.45)'};cursor:pointer;transition:color .12s;">${l}</button>`).join('')}
       </div>
     </div>
     <div class="admin-main" style="flex:1;overflow:hidden;display:flex;flex-direction:column;">
-      ${state.aScreen === 'dash' ? buildAdminDash() : state.aScreen === 'home' ? buildAdminHome() : state.aScreen === 'edit' ? buildAdminEdit() : buildAdminQr()}
+      ${state.aScreen === 'dash' ? buildAdminDash() : state.aScreen === 'home' ? buildAdminHome() : state.aScreen === 'edit' ? buildAdminEdit() : state.aScreen === 'gallery' ? buildAdminGallery() : buildAdminQr()}
     </div>
   </div>
   ${buildToast()}`;
@@ -1148,6 +1148,45 @@ function buildAdminHome() {
       </div>
       </div>
       <div style="height:env(safe-area-inset-bottom,32px);min-height:32px;"></div>
+    </div>
+  </div>`;
+}
+
+function buildAdminGallery() {
+  return `
+  <div style="flex:1;display:flex;flex-direction:column;overflow:hidden;animation:fadein .18s ease both;">
+    <div style="padding:14px 18px 12px;border-bottom:1px solid #e9e4e4;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;background:#ffffff;">
+      <div>
+        <div style="font:700 18px 'Cormorant Garamond',serif;color:#3C3C3B;">Galerie „Das Gebäude heute"</div>
+        <div style="font:400 11px 'Hanken Grotesk',sans-serif;color:#908d8d;margin-top:2px;">Diese Bilder erscheinen auf jeder Stationsseite und im Vollbild-Betrachter.</div>
+      </div>
+      <label class="tap" style="background:#3C3C3B;border:none;border-radius:9px;padding:9px 15px;font:600 12px 'Hanken Grotesk',sans-serif;color:#faf7f7;cursor:pointer;min-height:40px;display:flex;align-items:center;gap:6px;flex-shrink:0;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Bild hinzufügen
+        <input type="file" accept="image/*" data-action="upload-gallery-image" style="display:none;">
+      </label>
+    </div>
+    <div class="scroll" style="flex:1;padding:18px;">
+      <div class="admin-gallery-grid" style="display:grid;grid-template-columns:1fr;gap:14px;">
+        ${GALLERY.map((g) => `
+        <div style="background:#fff;border:1px solid #e9e4e4;border-radius:14px;padding:12px;display:flex;gap:12px;align-items:flex-start;">
+          <div style="width:96px;height:72px;border-radius:9px;overflow:hidden;background:#3C3C3B;flex-shrink:0;position:relative;">
+            <img src="${g.src}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"/>
+          </div>
+          <div style="flex:1;min-width:0;">
+            <label style="font:600 10px 'Hanken Grotesk',sans-serif;color:#706f6f;letter-spacing:.1em;text-transform:uppercase;display:block;margin-bottom:5px;">Bildunterschrift</label>
+            <textarea data-gallery-caption data-id="${g.id}" rows="2" style="width:100%;border:1.5px solid #e9e4e4;border-radius:9px;padding:8px 10px;font:400 13px/1.5 'Hanken Grotesk',sans-serif;color:#3C3C3B;background:#fff;outline:none;resize:vertical;">${escHtml(g.cap)}</textarea>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0;">
+            <label class="tap" style="background:#faf7f7;border:none;border-radius:7px;padding:7px 10px;font:500 10px 'Hanken Grotesk',sans-serif;color:#706f6f;cursor:pointer;text-align:center;">
+              Ersetzen
+              <input type="file" accept="image/*" data-action="replace-gallery-image" data-id="${g.id}" style="display:none;">
+            </label>
+            <button data-action="delete-gallery-image" data-id="${g.id}" class="tap" style="background:#fbeceb;border:none;border-radius:7px;padding:7px 10px;font:500 10px 'Hanken Grotesk',sans-serif;color:#c1453f;cursor:pointer;">Löschen</button>
+          </div>
+        </div>`).join('') || `<div style="padding:30px 10px;text-align:center;font:400 13px 'Hanken Grotesk',sans-serif;color:#908d8d;">Noch keine Bilder. Mit „Bild hinzufügen" oben starten.</div>`}
+      </div>
+      <div style="height:env(safe-area-inset-bottom,24px);min-height:24px;"></div>
     </div>
   </div>`;
 }
@@ -1385,6 +1424,20 @@ function bindEvents() {
     if (state.homeHeroImageUrl) URL.revokeObjectURL(state.homeHeroImageUrl);
     setState({ homeHeroImageUrl: URL.createObjectURL(file), homeHeroImageFile: file });
   });
+  const galleryAddInput = document.querySelector('[data-action="upload-gallery-image"]');
+  if (galleryAddInput) galleryAddInput.addEventListener('change', e => {
+    const file = e.target.files && e.target.files[0];
+    if (file) addGalleryImage(file);
+  });
+  document.querySelectorAll('[data-action="replace-gallery-image"]').forEach(el => {
+    el.addEventListener('change', e => {
+      const file = e.target.files && e.target.files[0];
+      if (file) replaceGalleryImage(el.dataset.id, file);
+    });
+  });
+  document.querySelectorAll('[data-gallery-caption]').forEach(el => {
+    el.addEventListener('change', () => updateGalleryCaption(el.dataset.id, el.value));
+  });
   const audioInput = document.querySelector('[data-action="upload-audio"]');
   if (audioInput) audioInput.addEventListener('change', e => {
     const file = e.target.files && e.target.files[0];
@@ -1503,6 +1556,7 @@ function handleAction(action, data) {
     case 'save-draft': saveStationEdits('draft'); break;
     case 'save-pub': saveStationEdits('pub'); break;
     case 'save-home': saveHomeSettings(); break;
+    case 'delete-gallery-image': deleteGalleryImage(data.id); break;
     case 'toggle-scan-button': setState({ homeShowScanButton: !state.homeShowScanButton }); break;
     case 'move-block': {
       const i = Number(data.idx);
@@ -1610,6 +1664,60 @@ async function saveHomeSettings() {
   } catch (e) {
     setState({ homeSaving: false });
     alert('Speichern fehlgeschlagen: ' + (e?.message || e));
+  }
+}
+
+async function addGalleryImage(file) {
+  try {
+    const url = await uploadToStorage(file, 'gallery');
+    const sort_order = GALLERY.length;
+    const { data, error } = await supabase.from('gallery').insert({ image_url: url, caption: '', sort_order }).select().single();
+    if (error) throw error;
+    GALLERY.push({ id: data.id, sort_order: data.sort_order, src: data.image_url, cap: data.caption });
+    render();
+    toast('Bild hinzugefügt.');
+  } catch (e) {
+    alert('Hochladen fehlgeschlagen: ' + (e?.message || e));
+  }
+}
+
+async function replaceGalleryImage(id, file) {
+  try {
+    const url = await uploadToStorage(file, 'gallery');
+    const { error } = await supabase.from('gallery').update({ image_url: url }).eq('id', id);
+    if (error) throw error;
+    const g = GALLERY.find(x => x.id === id);
+    if (g) g.src = url;
+    render();
+    toast('Bild ersetzt.');
+  } catch (e) {
+    alert('Ersetzen fehlgeschlagen: ' + (e?.message || e));
+  }
+}
+
+async function updateGalleryCaption(id, caption) {
+  try {
+    const { error } = await supabase.from('gallery').update({ caption }).eq('id', id);
+    if (error) throw error;
+    const g = GALLERY.find(x => x.id === id);
+    if (g) g.cap = caption;
+    toast('Bildunterschrift gespeichert.');
+  } catch (e) {
+    alert('Speichern fehlgeschlagen: ' + (e?.message || e));
+  }
+}
+
+async function deleteGalleryImage(id) {
+  if (!window.confirm('Dieses Bild wirklich löschen?')) return;
+  try {
+    const { error } = await supabase.from('gallery').delete().eq('id', id);
+    if (error) throw error;
+    GALLERY = GALLERY.filter(x => x.id !== id);
+    if (state.galIdx >= GALLERY.length) state.galIdx = Math.max(0, GALLERY.length - 1);
+    render();
+    toast('Bild gelöscht.');
+  } catch (e) {
+    alert('Löschen fehlgeschlagen: ' + (e?.message || e));
   }
 }
 
