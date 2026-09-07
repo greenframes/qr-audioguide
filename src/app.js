@@ -14,6 +14,8 @@ let SETTINGS = {
   badge_text: '{n} STATIONEN',
   kicker: 'Willkommen',
   stations_kicker: 'Stationen',
+  station_label: 'Station',
+  station_label_plural: 'Stationen',
   welcome_heading: '{n} Stationen,\n180 Jahre.',
   welcome_text: 'Von der ersten Dampfmaschine Hagens 1844 über 1.500 Beschäftigte im Jahr 1913 bis zur denkmalgerechten Sanierung heute. Jede Station: ein kurzer Text und ein Audioguide von etwa drei Minuten.',
   link_label: 'Mehr auf alte-schraubenfabrik.de',
@@ -88,6 +90,7 @@ let state = {
   editAudioUrl: null, editAudioName: null, editAudioType: null, editAudioFile: null,
   saving: false,
   homeKicker: '', homeStationsKicker: '', homeBadgeText: '',
+  homeStationLabel: '', homeStationLabelPlural: '',
   homeHeroTitle: '', homeHeroSubtitle: '', homeHeroImageUrl: null, homeHeroImageFile: null,
   homeWelcomeHeading: '', homeWelcomeText: '', homeLinkLabel: '', homeLinkUrl: '',
   homeShowScanButton: true, homeBlockOrder: ['buttons', 'banner', 'stations', 'sources'],
@@ -638,7 +641,7 @@ function buildHomeBlocksInOrder() {
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="5" y="5" width="3" height="3" fill="currentColor" stroke="none"/><rect x="16" y="5" width="3" height="3" fill="currentColor" stroke="none"/><rect x="5" y="16" width="3" height="3" fill="currentColor" stroke="none"/><line x1="14" y1="14" x2="21" y2="14"/><line x1="14" y1="17" x2="17" y2="17"/><line x1="20" y1="17" x2="21" y2="17"/><line x1="14" y1="20" x2="17" y2="20"/><line x1="20" y1="20" x2="21" y2="20"/></svg>
           QR-Code scannen
         </button>` : ''}
-        <button data-action="go-list" class="tap" style="background:transparent;color:#3C3C3B;border:1.5px solid #d8d2d2;border-radius:999px;padding:17px 26px;font:500 15px 'Hanken Grotesk',sans-serif;cursor:pointer;width:100%;min-height:56px;">Alle Stationen ansehen</button>
+        <button data-action="go-list" class="tap" style="background:transparent;color:#3C3C3B;border:1.5px solid #d8d2d2;border-radius:999px;padding:17px 26px;font:500 15px 'Hanken Grotesk',sans-serif;cursor:pointer;width:100%;min-height:56px;">Alle ${escHtml(SETTINGS.station_label_plural)} ansehen</button>
       </div>`,
     banner: SETTINGS.link_url ? `
       <div style="padding:0 20px;margin-bottom:24px;">
@@ -722,12 +725,12 @@ function buildList() {
         <button data-action="go-start" class="tap" style="width:42px;height:42px;border-radius:50%;background:#e9e4e4;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3C3C3B" stroke-width="2.5"><path d="M19 12H5M5 12l7 7M5 12l7-7"/></svg>
         </button>
-        <span style="font:600 16px 'Hanken Grotesk',sans-serif;color:#3C3C3B;">Alle Stationen</span>
+        <span style="font:600 16px 'Hanken Grotesk',sans-serif;color:#3C3C3B;">Alle ${escHtml(SETTINGS.station_label_plural)}</span>
         <div style="width:42px;"></div>
       </div>
       <div style="position:relative;margin-bottom:12px;">
         <svg style="position:absolute;left:13px;top:50%;transform:translateY(-50%);" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#908d8d" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <input placeholder="Stationen suchen…" value="${escHtml(state.searchQ)}" data-field="searchQ" style="width:100%;border:1.5px solid #d8d2d2;border-radius:12px;padding:12px 14px 12px 38px;font:400 14px 'Hanken Grotesk',sans-serif;color:#3C3C3B;background:#fff;outline:none;"/>
+        <input placeholder="${escHtml(SETTINGS.station_label_plural)} suchen…" value="${escHtml(state.searchQ)}" data-field="searchQ" style="width:100%;border:1.5px solid #d8d2d2;border-radius:12px;padding:12px 14px 12px 38px;font:400 14px 'Hanken Grotesk',sans-serif;color:#3C3C3B;background:#fff;outline:none;"/>
       </div>
     </div>
     <div class="scroll" style="flex:1;background:#faf7f7;">
@@ -817,7 +820,7 @@ function buildStation() {
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M19 12H5M5 12l7 7M5 12l7-7"/></svg>
         </button>
         <div style="background:rgba(255,255,255,.13);backdrop-filter:blur(8px);padding:6px 16px;border-radius:22px;border:1px solid rgba(255,255,255,.14);">
-          <span style="font:500 12px 'Hanken Grotesk',sans-serif;color:rgba(255,255,255,.9);">Station ${state.stIdx + 1} von ${STATIONS.length}</span>
+          <span style="font:500 12px 'Hanken Grotesk',sans-serif;color:rgba(255,255,255,.9);">${escHtml(SETTINGS.station_label)} ${state.stIdx + 1} von ${STATIONS.length}</span>
         </div>
         <div style="width:42px;"></div>
       </div>
@@ -893,9 +896,9 @@ function buildStation() {
         </div>
         <div style="margin:4px 16px 24px;padding:15px 16px;background:#f4f0f0;border-radius:16px;display:flex;align-items:center;justify-content:space-between;">
           <div>
-            <div style="font:400 10px 'Hanken Grotesk',sans-serif;color:#908d8d;letter-spacing:.12em;text-transform:uppercase;margin-bottom:3px;">Nächste Station</div>
+            <div style="font:400 10px 'Hanken Grotesk',sans-serif;color:#908d8d;letter-spacing:.12em;text-transform:uppercase;margin-bottom:3px;">Nächste ${escHtml(SETTINGS.station_label)}</div>
             <div style="font:600 17px/1.2 'Cormorant Garamond',serif;color:#3C3C3B;">${escHtml(next.title)}</div>
-            <div style="font:400 12px 'Hanken Grotesk',sans-serif;color:#908d8d;margin-top:2px;">Station ${(state.stIdx + 2) > STATIONS.length ? 1 : (state.stIdx + 2)} · ${escHtml(next.era)}</div>
+            <div style="font:400 12px 'Hanken Grotesk',sans-serif;color:#908d8d;margin-top:2px;">${escHtml(SETTINGS.station_label)} ${(state.stIdx + 2) > STATIONS.length ? 1 : (state.stIdx + 2)} · ${escHtml(next.era)}</div>
           </div>
           <button data-action="go-next" class="tap" style="width:48px;height:48px;border-radius:50%;background:#3C3C3B;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
@@ -1107,6 +1110,20 @@ function buildAdminHome() {
       <div style="margin-bottom:15px;">
         <label style="font:600 11px 'Hanken Grotesk',sans-serif;color:#706f6f;letter-spacing:.12em;text-transform:uppercase;display:block;margin-bottom:7px;">Kicker über der Stationsvorschau</label>
         <input value="${escHtml(state.homeStationsKicker)}" data-field="homeStationsKicker" placeholder="z.B. Stationen" style="width:100%;border:1.5px solid #e9e4e4;border-radius:11px;padding:12px 13px;font:400 13px 'Hanken Grotesk',sans-serif;color:#3C3C3B;background:#fff;outline:none;"/>
+      </div>
+      <div style="margin-bottom:15px;background:#faf7f7;border-radius:11px;padding:14px;">
+        <div style="font:600 11px 'Hanken Grotesk',sans-serif;color:#706f6f;letter-spacing:.12em;text-transform:uppercase;margin-bottom:10px;">Bezeichnung „Station" (überall in der Besucher-Ansicht)</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div>
+            <label style="font:500 11px 'Hanken Grotesk',sans-serif;color:#706f6f;display:block;margin-bottom:6px;">Einzahl</label>
+            <input value="${escHtml(state.homeStationLabel)}" data-field="homeStationLabel" placeholder="z.B. Station, Geschichte" style="width:100%;border:1.5px solid #e9e4e4;border-radius:9px;padding:10px 12px;font:400 13px 'Hanken Grotesk',sans-serif;color:#3C3C3B;background:#fff;outline:none;"/>
+          </div>
+          <div>
+            <label style="font:500 11px 'Hanken Grotesk',sans-serif;color:#706f6f;display:block;margin-bottom:6px;">Mehrzahl</label>
+            <input value="${escHtml(state.homeStationLabelPlural)}" data-field="homeStationLabelPlural" placeholder="z.B. Stationen, Geschichten" style="width:100%;border:1.5px solid #e9e4e4;border-radius:9px;padding:10px 12px;font:400 13px 'Hanken Grotesk',sans-serif;color:#3C3C3B;background:#fff;outline:none;"/>
+          </div>
+        </div>
+        <div style="font:400 11px 'Hanken Grotesk',sans-serif;color:#908d8d;margin-top:8px;">Wird u.a. bei „Nächste …", „… X von Y" und „Alle … ansehen" verwendet.</div>
       </div>
       </div>
       <div class="admin-edit-side">
@@ -1485,6 +1502,7 @@ function resetHomeEditState() {
   return {
     aScreen: 'home',
     homeKicker: SETTINGS.kicker, homeStationsKicker: SETTINGS.stations_kicker, homeBadgeText: SETTINGS.badge_text,
+    homeStationLabel: SETTINGS.station_label, homeStationLabelPlural: SETTINGS.station_label_plural,
     homeHeroTitle: SETTINGS.hero_title, homeHeroSubtitle: SETTINGS.hero_subtitle,
     homeHeroImageUrl: null, homeHeroImageFile: null,
     homeWelcomeHeading: SETTINGS.welcome_heading, homeWelcomeText: SETTINGS.welcome_text,
@@ -1528,7 +1546,7 @@ function handleAction(action, data) {
       if (input) {
         const idx = findStationBySlugOrUrl(input);
         if (idx >= 0) { stopCamera(); openStation(idx); }
-        else window.alert('Station nicht gefunden.');
+        else window.alert(SETTINGS.station_label + ' nicht gefunden.');
       }
       break;
     }
@@ -1649,6 +1667,8 @@ async function saveHomeSettings() {
       hero_image_url: heroImageUrl,
       badge_text: state.homeBadgeText.trim() || SETTINGS.badge_text,
       stations_kicker: state.homeStationsKicker.trim(),
+      station_label: state.homeStationLabel.trim() || SETTINGS.station_label,
+      station_label_plural: state.homeStationLabelPlural.trim() || SETTINGS.station_label_plural,
       welcome_heading: state.homeWelcomeHeading,
       welcome_text: state.homeWelcomeText.trim(),
       link_label: state.homeLinkLabel.trim(),

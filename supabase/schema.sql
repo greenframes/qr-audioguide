@@ -77,6 +77,8 @@ create table if not exists public.site_settings (
   badge_text      text not null default '{n} STATIONEN',
   kicker          text not null default 'Willkommen',
   stations_kicker text not null default 'Stationen',
+  station_label        text not null default 'Station',
+  station_label_plural text not null default 'Stationen',
   welcome_heading text not null default '{n} Stationen,\n180 Jahre.',
   welcome_text    text not null default 'Von der ersten Dampfmaschine Hagens 1844 über 1.500 Beschäftigte im Jahr 1913 bis zur denkmalgerechten Sanierung heute. Jede Station: ein kurzer Text und ein Audioguide von etwa drei Minuten.',
   link_label      text not null default 'Mehr auf alte-schraubenfabrik.de',
