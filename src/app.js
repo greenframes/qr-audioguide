@@ -157,6 +157,7 @@ function startSpeech() {
 function startRealAudio(st) {
   if (!realAudioEl || realAudioEl.dataset.src !== st.audio_url) {
     realAudioEl = new Audio(st.audio_url);
+    realAudioEl.preload = 'auto';
     realAudioEl.dataset.src = st.audio_url;
     realAudioEl.addEventListener('timeupdate', () => {
       const el = Math.floor(realAudioEl.currentTime);
@@ -165,9 +166,20 @@ function startRealAudio(st) {
     realAudioEl.addEventListener('ended', () => {
       state = { ...state, playing: false, elapsed: Math.round(realAudioEl.duration) || st.dur }; render();
     });
+    realAudioEl.addEventListener('error', () => {
+      const code = realAudioEl.error ? realAudioEl.error.code : null;
+      const reasons = { 1: 'Wiedergabe abgebrochen', 2: 'Netzwerkfehler beim Laden', 3: 'Datei beschädigt oder nicht dekodierbar', 4: 'Dateiformat/URL nicht unterstützt' };
+      console.error('[audio] Ladefehler', code, st.audio_url);
+      state = { ...state, playing: false }; render();
+      toast('Audio konnte nicht geladen werden' + (reasons[code] ? ': ' + reasons[code] : '') + '.');
+    });
   }
   realAudioEl.currentTime = state.elapsed || 0;
-  realAudioEl.play().catch(() => {});
+  realAudioEl.play().catch((err) => {
+    console.error('[audio] play() fehlgeschlagen', err);
+    state = { ...state, playing: false }; render();
+    toast('Wiedergabe blockiert: ' + (err && err.message ? err.message : err));
+  });
 }
 function stopSpeech() {
   stopTick(); speechStartTime = null;
@@ -258,11 +270,15 @@ function patchPlayerUI(elapsed, dur) {
   bars.forEach((b, i) => { b.style.background = i < cut ? '#C9A87C' : 'rgba(255,255,255,.18)'; });
 }
 function toast(msg) {
-  const el = document.getElementById('toast-box');
-  if (!el) return;
-  el.textContent = msg; el.style.opacity = '1';
-  clearTimeout(toast._t);
-  toast._t = setTimeout(() => { el.style.opacity = '0'; }, 3200);
+  // Verzögert auf den nächsten Frame, damit ein render()-Aufruf direkt davor
+  // oder danach (baut #toast-box neu auf) den Text nicht überschreibt.
+  requestAnimationFrame(() => {
+    const el = document.getElementById('toast-box');
+    if (!el) return;
+    el.textContent = msg; el.style.opacity = '1';
+    clearTimeout(toast._t);
+    toast._t = setTimeout(() => { el.style.opacity = '0'; }, 3200);
+  });
 }
 
 // ── SUPABASE DATENZUGRIFF ───────────────────────────────────
@@ -1646,8 +1662,8 @@ async function saveStationEdits(status) {
       if (error) throw error;
       STATIONS.push(data);
     }
-    toast(status === 'pub' ? 'Station veröffentlicht.' : 'Als Entwurf gespeichert.');
     setState({ saving: false, aScreen: 'dash', editImageFile: null, editAudioFile: null });
+    toast(status === 'pub' ? 'Station veröffentlicht.' : 'Als Entwurf gespeichert.');
   } catch (e) {
     setState({ saving: false });
     alert('Speichern fehlgeschlagen: ' + (e?.message || e));
@@ -1679,8 +1695,8 @@ async function saveHomeSettings() {
     const { data, error } = await supabase.from('site_settings').update(payload).eq('id', 'main').select().single();
     if (error) throw error;
     SETTINGS = { ...SETTINGS, ...data };
-    toast('Startseite gespeichert.');
     setState({ homeSaving: false, homeHeroImageFile: null });
+    toast('Startseite gespeichert.');
   } catch (e) {
     setState({ homeSaving: false });
     alert('Speichern fehlgeschlagen: ' + (e?.message || e));
