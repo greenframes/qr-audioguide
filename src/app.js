@@ -174,7 +174,10 @@ function startRealAudio(st) {
       toast('Audio konnte nicht geladen werden' + (reasons[code] ? ': ' + reasons[code] : '') + '.');
     });
   }
-  realAudioEl.currentTime = state.elapsed || 0;
+  const dur = (Number.isFinite(realAudioEl.duration) && realAudioEl.duration) || st.dur;
+  const atEnd = realAudioEl.ended || state.elapsed >= dur - 0.25;
+  state.elapsed = atEnd ? 0 : (state.elapsed || 0);
+  realAudioEl.currentTime = state.elapsed;
   realAudioEl.play().catch((err) => {
     console.error('[audio] play() fehlgeschlagen', err);
     state = { ...state, playing: false }; render();
