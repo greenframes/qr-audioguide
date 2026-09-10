@@ -990,6 +990,40 @@ function buildAdmin() {
   ${buildToast()}`;
 }
 
+function stationRow(st, canReorder, isFirst, isLast) {
+  return `
+      <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid #f4f0f0;background:#fff;">
+        ${canReorder ? `
+        <div style="display:flex;flex-direction:column;gap:3px;flex-shrink:0;">
+          <button data-action="move-station" data-id="${st.id}" data-dir="up" class="tap" ${isFirst ? 'disabled' : ''} style="width:22px;height:19px;border-radius:5px;background:#faf7f7;border:none;cursor:${isFirst ? 'default' : 'pointer'};display:flex;align-items:center;justify-content:center;opacity:${isFirst ? .35 : 1};">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#706f6f" stroke-width="2.5"><polyline points="18 15 12 9 6 15"/></svg>
+          </button>
+          <button data-action="move-station" data-id="${st.id}" data-dir="down" class="tap" ${isLast ? 'disabled' : ''} style="width:22px;height:19px;border-radius:5px;background:#faf7f7;border:none;cursor:${isLast ? 'default' : 'pointer'};display:flex;align-items:center;justify-content:center;opacity:${isLast ? .35 : 1};">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#706f6f" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+        </div>` : ''}
+        <div style="width:46px;height:46px;border-radius:11px;flex-shrink:0;position:relative;overflow:hidden;background:#3C3C3B;">
+          <img src="${st.image_url || ''}" alt="" loading="lazy" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"/>
+          <span style="position:absolute;bottom:3px;left:5px;font:700 8px 'Hanken Grotesk',sans-serif;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.8);">${st.id}</span>
+        </div>
+        <div style="flex:1;min-width:0;">
+          <div style="font:500 13px 'Hanken Grotesk',sans-serif;color:#3C3C3B;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escHtml(st.title)}</div>
+          <div style="font:400 11px 'Hanken Grotesk',sans-serif;color:#908d8d;margin-top:2px;display:flex;align-items:center;gap:7px;">
+            ${escHtml(st.era)}
+            <span style="background:${st.status === 'pub' ? '#e9f4ef' : '#fbf2e3'};color:${st.status === 'pub' ? '#4c9a78' : '#c98a3e'};padding:1px 8px;border-radius:20px;font:600 9px 'Hanken Grotesk',sans-serif;">${st.status === 'pub' ? 'Live' : 'Entwurf'}</span>
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;flex-shrink:0;">
+          <button data-action="edit-station" data-idx="${STATIONS.indexOf(st)}" class="tap" style="width:34px;height:34px;border-radius:9px;background:#faf7f7;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#706f6f" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </button>
+          <button data-action="go-qr" data-id="${st.id}" class="tap" style="width:34px;height:34px;border-radius:9px;background:#faf7f7;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#706f6f" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="5" y="5" width="3" height="3" fill="#706f6f" stroke="none"/><rect x="16" y="5" width="3" height="3" fill="#706f6f" stroke="none"/><rect x="5" y="16" width="3" height="3" fill="#706f6f" stroke="none"/></svg>
+          </button>
+        </div>
+      </div>`;
+}
+
 function buildAdminDash() {
   const statTotal = STATIONS.length;
   const statPub = STATIONS.filter(s => s.status === 'pub').length;
@@ -1046,28 +1080,13 @@ function buildAdminDash() {
           <option value="draft" ${state.filterStatus === 'draft' ? 'selected' : ''}>Entwurf</option>
         </select>
       </div>
-      ${filtered.map((st) => `
-      <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid #f4f0f0;background:#fff;">
-        <div style="width:46px;height:46px;border-radius:11px;flex-shrink:0;position:relative;overflow:hidden;background:#3C3C3B;">
-          <img src="${st.image_url || ''}" alt="" loading="lazy" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"/>
-          <span style="position:absolute;bottom:3px;left:5px;font:700 8px 'Hanken Grotesk',sans-serif;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.8);">${st.id}</span>
-        </div>
-        <div style="flex:1;min-width:0;">
-          <div style="font:500 13px 'Hanken Grotesk',sans-serif;color:#3C3C3B;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escHtml(st.title)}</div>
-          <div style="font:400 11px 'Hanken Grotesk',sans-serif;color:#908d8d;margin-top:2px;display:flex;align-items:center;gap:7px;">
-            ${escHtml(st.era)}
-            <span style="background:${st.status === 'pub' ? '#e9f4ef' : '#fbf2e3'};color:${st.status === 'pub' ? '#4c9a78' : '#c98a3e'};padding:1px 8px;border-radius:20px;font:600 9px 'Hanken Grotesk',sans-serif;">${st.status === 'pub' ? 'Live' : 'Entwurf'}</span>
-          </div>
-        </div>
-        <div style="display:flex;gap:6px;flex-shrink:0;">
-          <button data-action="edit-station" data-idx="${STATIONS.indexOf(st)}" class="tap" style="width:34px;height:34px;border-radius:9px;background:#faf7f7;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#706f6f" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-          </button>
-          <button data-action="go-qr" data-id="${st.id}" class="tap" style="width:34px;height:34px;border-radius:9px;background:#faf7f7;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#706f6f" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="5" y="5" width="3" height="3" fill="#706f6f" stroke="none"/><rect x="16" y="5" width="3" height="3" fill="#706f6f" stroke="none"/><rect x="5" y="16" width="3" height="3" fill="#706f6f" stroke="none"/></svg>
-          </button>
-        </div>
-      </div>`).join('')}
+      ${(() => {
+        const canReorder = !state.searchQ && state.filterStatus === 'all';
+        if (!canReorder && filtered.length) {
+          return `<div style="margin:0 16px 4px;padding:9px 12px;background:#faf7f7;border-radius:9px;font:400 11px 'Hanken Grotesk',sans-serif;color:#908d8d;">Reihenfolge ändern geht nur in der ungefilterten Liste (Suche/Filter zurücksetzen).</div>` + filtered.map((st) => stationRow(st, false)).join('');
+        }
+        return filtered.map((st, i) => stationRow(st, true, i === 0, i === filtered.length - 1)).join('');
+      })()}
       <div style="height:env(safe-area-inset-bottom,24px);min-height:24px;"></div>
     </div>
   </div>`;
@@ -1601,6 +1620,7 @@ function handleAction(action, data) {
       setState({ homeBlockOrder: order });
       break;
     }
+    case 'move-station': moveStation(data.id, data.dir); break;
     case 'dl-qr': {
       const st = STATIONS.find(s => s.id === state.qrStationId) || STATIONS[0];
       if (st) downloadQR(st, data.fmt);
@@ -1631,6 +1651,28 @@ async function doLogout() {
   await supabase.auth.signOut();
   session = null;
   setState({ view: 'admin-login', loginPw: '', loginErr: '' });
+}
+
+async function moveStation(id, dir) {
+  const i = STATIONS.findIndex(s => s.id === id);
+  const j = dir === 'up' ? i - 1 : i + 1;
+  if (i < 0 || j < 0 || j >= STATIONS.length) return;
+  const a = STATIONS[i], b = STATIONS[j];
+  const aOrder = a.sort_order, bOrder = b.sort_order;
+  [STATIONS[i], STATIONS[j]] = [STATIONS[j], STATIONS[i]];
+  a.sort_order = bOrder; b.sort_order = aOrder;
+  render();
+  try {
+    const [{ error: e1 }, { error: e2 }] = await Promise.all([
+      supabase.from('stations').update({ sort_order: a.sort_order }).eq('id', a.id),
+      supabase.from('stations').update({ sort_order: b.sort_order }).eq('id', b.id),
+    ]);
+    if (e1 || e2) throw e1 || e2;
+    toast('Reihenfolge gespeichert.');
+  } catch (err) {
+    console.error('moveStation failed', err);
+    toast('Reihenfolge konnte nicht gespeichert werden.');
+  }
 }
 
 async function saveStationEdits(status) {
