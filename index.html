@@ -46,6 +46,10 @@
   .safe-top    { padding-top: env(safe-area-inset-top, 0px); }
   .safe-bottom { padding-bottom: env(safe-area-inset-bottom, 0px); }
   .safe-sides  { padding-left: env(safe-area-inset-left, 0px); padding-right: env(safe-area-inset-right, 0px); }
+  /* Lautstärkeregler: auf dem Handy gibt es die Hardware-Tasten (auf iOS
+     wirkt sich audio.volume ohnehin nicht aus), daher nur auf breiten
+     Bildschirmen (Desktop) einblenden. */
+  .vol-row { display: none; }
 
   /* ── Desktop-Layout ──────────────────────────────────────────
      Besucher-Ansicht: auf breiten Bildschirmen als zentrierte
@@ -89,6 +93,7 @@
     .admin-qr-layout { display: grid !important; grid-template-columns: 340px 1fr; gap: 24px; align-items: start; }
     .admin-stat-grid { grid-template-columns: repeat(4, 1fr) !important; }
     .admin-gallery-grid { grid-template-columns: 1fr 1fr !important; }
+    .vol-row { display: flex !important; }
   }
 </style>
 </head>

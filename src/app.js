@@ -906,7 +906,7 @@ function buildStation() {
           </div>
           <span style="font:400 11px 'Hanken Grotesk',sans-serif;color:rgba(255,255,255,.36);">${fmt(st.dur)}</span>
         </div>
-        <div style="display:flex;align-items:center;gap:10px;margin-top:14px;">
+        <div class="vol-row" style="align-items:center;gap:10px;margin-top:14px;">
           <button id="vol-icon" data-action="toggle-mute" class="tap" style="background:none;border:none;cursor:pointer;padding:2px;display:flex;align-items:center;justify-content:center;flex-shrink:0;opacity:.7;">${volumeIconSvg(state.volume)}</button>
           <input id="vol-slider" type="range" min="0" max="1" step="0.05" value="${state.volume}" style="flex:1;accent-color:#C9A87C;cursor:pointer;height:16px;"/>
         </div>
