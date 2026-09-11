@@ -73,6 +73,8 @@ let state = {
   stIdx: 0,
   playing: false,
   elapsed: 0,
+  volume: loadVolumePref(),
+  volBeforeMute: 1,
   galIdx: 0,
   lightbox: false,
   scanState: 'idle',      // idle | requesting | live | denied | done
@@ -136,7 +138,7 @@ function startSpeech() {
   const text = st.narration || st.description || '';
   const dur = st.dur;
   const utter = new SpeechSynthesisUtterance(text);
-  utter.lang = 'de-DE'; utter.rate = 0.9; utter.volume = 1.0;
+  utter.lang = 'de-DE'; utter.rate = 0.9; utter.volume = state.volume;
   const v = _bestVoice(); if (v) utter.voice = v;
   currentUtterance = utter;
   speechStartTime = Date.now() - (state.elapsed * 1000);
@@ -158,6 +160,7 @@ function startRealAudio(st) {
   if (!realAudioEl || realAudioEl.dataset.src !== st.audio_url) {
     realAudioEl = new Audio(st.audio_url);
     realAudioEl.preload = 'auto';
+    realAudioEl.volume = state.volume;
     realAudioEl.dataset.src = st.audio_url;
     realAudioEl.addEventListener('timeupdate', () => {
       const el = Math.floor(realAudioEl.currentTime);
@@ -191,6 +194,31 @@ function stopSpeech() {
   if (realAudioEl) { try { realAudioEl.pause(); } catch (e) {} }
 }
 function stopTick() { if (tickTimer) { clearInterval(tickTimer); tickTimer = null; } }
+function loadVolumePref() {
+  try {
+    const v = parseFloat(localStorage.getItem('aq_volume'));
+    if (Number.isFinite(v) && v >= 0 && v <= 1) return v;
+  } catch (e) {}
+  return 1;
+}
+function volumeIconSvg(v) {
+  if (v <= 0) return `<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M11 5 6 9H3v6h3l5 4V5z" fill="white" stroke="none"/><line x1="16" y1="9" x2="22" y2="15"/><line x1="22" y1="9" x2="16" y2="15"/></svg>`;
+  if (v < 0.5) return `<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M11 5 6 9H3v6h3l5 4V5z" fill="white" stroke="none"/><path d="M16 9.5a4 4 0 0 1 0 5"/></svg>`;
+  return `<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M11 5 6 9H3v6h3l5 4V5z" fill="white" stroke="none"/><path d="M16 9.5a4 4 0 0 1 0 5"/><path d="M19 7a8 8 0 0 1 0 10"/></svg>`;
+}
+function setVolume(v, opts) {
+  v = Math.max(0, Math.min(1, Number(v)));
+  if (!Number.isFinite(v)) v = 1;
+  state.volume = v;
+  if (realAudioEl) realAudioEl.volume = v;
+  try { localStorage.setItem('aq_volume', String(v)); } catch (e) {}
+  if (opts && opts.noRender) {
+    const iconBtn = document.getElementById('vol-icon');
+    if (iconBtn) iconBtn.innerHTML = volumeIconSvg(v);
+  } else {
+    render();
+  }
+}
 function toggleSpeech() {
   const st = STATIONS[state.stIdx]; if (!st) return;
   if (st.audio_url) {
@@ -877,6 +905,10 @@ function buildStation() {
           </div>
           <span style="font:400 11px 'Hanken Grotesk',sans-serif;color:rgba(255,255,255,.36);">${fmt(st.dur)}</span>
         </div>
+        <div style="display:flex;align-items:center;gap:10px;margin-top:14px;">
+          <button id="vol-icon" data-action="toggle-mute" class="tap" style="background:none;border:none;cursor:pointer;padding:2px;display:flex;align-items:center;justify-content:center;flex-shrink:0;opacity:.7;">${volumeIconSvg(state.volume)}</button>
+          <input id="vol-slider" type="range" min="0" max="1" step="0.05" value="${state.volume}" style="flex:1;accent-color:#C9A87C;cursor:pointer;height:16px;"/>
+        </div>
       </div>
       <div style="padding:18px 20px 0;">
         ${(st.description || '').split('\n\n').map(p => `<p style="font:400 16.5px/1.78 'Hanken Grotesk',sans-serif;color:#454444;margin:0 0 15px;text-wrap:pretty;">${escHtml(p)}</p>`).join('')}
@@ -1503,6 +1535,8 @@ function bindEvents() {
     const a = new Audio(url);
     a.addEventListener('loadedmetadata', () => { if (isFinite(a.duration) && a.duration > 0) setState({ editDur: Math.round(a.duration) }); });
   });
+  const volSlider = document.getElementById('vol-slider');
+  if (volSlider) volSlider.addEventListener('input', e => setVolume(e.target.value, { noRender: true }));
   const stage = document.getElementById('lb-stage');
   if (stage) {
     let x0 = null;
@@ -1599,6 +1633,11 @@ function handleAction(action, data) {
     case 'gal-open': setState({ lightbox: true }); break;
     case 'gal-close': setState({ lightbox: false }); break;
     case 'toggle-play': toggleSpeech(); break;
+    case 'toggle-mute': {
+      if (state.volume > 0) { state.volBeforeMute = state.volume; setVolume(0); }
+      else setVolume(state.volBeforeMute || 1);
+      break;
+    }
     case 'skip-back': skipSpeech(-15); break;
     case 'skip-fwd': skipSpeech(+15); break;
     case 'toggle-pw': setState({ pwVisible: !state.pwVisible }); break;
