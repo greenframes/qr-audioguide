@@ -331,7 +331,35 @@ async function loadData() {
 async function incrementScan(stationId) {
   try { await supabase.rpc('increment_station_scans', { station_id: stationId }); } catch (e) {}
 }
+async function compressImage(file, maxDim = 1920, quality = 0.82) {
+  // Fotos direkt vom Handy/Kamera sind oft mehrere MB groß und mehrere
+  // Tausend Pixel breit - viel mehr, als für die Anzeige je gebraucht wird.
+  // Das führt live zu sehr langen Ladezeiten, v.a. über Mobilfunk vor Ort
+  // im Museum. Deshalb vor dem Hochladen client-seitig auf eine sinnvolle
+  // Kantenlänge herunterskalieren und als JPEG neu komprimieren.
+  if (!file.type || !file.type.startsWith('image/') || file.type === 'image/gif') return file;
+  try {
+    const bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' });
+    const scale = Math.min(1, maxDim / Math.max(bitmap.width, bitmap.height));
+    if (scale >= 1) { bitmap.close?.(); return file; }
+    const w = Math.round(bitmap.width * scale);
+    const h = Math.round(bitmap.height * scale);
+    const canvas = document.createElement('canvas');
+    canvas.width = w; canvas.height = h;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(bitmap, 0, 0, w, h);
+    bitmap.close?.();
+    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', quality));
+    if (!blob || blob.size >= file.size) return file;
+    const name = (file.name || 'bild').replace(/\.[^.]+$/, '') + '.jpg';
+    return new File([blob], name, { type: 'image/jpeg' });
+  } catch (e) {
+    console.error('[upload] Bildkomprimierung fehlgeschlagen, lade Original hoch', e);
+    return file;
+  }
+}
 async function uploadToStorage(file, folder) {
+  if (folder !== 'audio') file = await compressImage(file);
   const ext = (file.name.split('.').pop() || 'bin').toLowerCase().replace(/[^a-z0-9]/g, '') || 'bin';
   const path = `${folder}/${crypto.randomUUID()}.${ext}`;
   const { error } = await supabase.storage.from(BUCKET).upload(path, file, { upsert: false, cacheControl: '3600' });
