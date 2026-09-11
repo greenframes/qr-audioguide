@@ -112,8 +112,6 @@ const synth = window.speechSynthesis;
 let currentUtterance = null;
 let speechStartTime = null;
 let realAudioEl = null;
-let audioCtx = null;
-let gainNode = null;
 let _voices = [];
 function _loadVoices() { _voices = synth.getVoices(); }
 _loadVoices();
@@ -159,35 +157,12 @@ function startSpeech() {
   _startTick();
   synth.speak(utter);
 }
-function connectGain(audioEl) {
-  // iOS Safari ignoriert audio.volume komplett (bekannte Plattform-Einschränkung -
-  // Lautstärke lässt sich dort nur über die Hardware-Tasten ändern). Ein GainNode
-  // über die Web-Audio-API umgeht das, da die Pegelanpassung dort im Audiograph
-  // selbst passiert statt über die (auf iOS wirkungslose) HTMLMediaElement-Eigenschaft.
-  // Funktioniert zusätzlich auf allen anderen Plattformen genauso zuverlässig.
-  gainNode = null;
-  try {
-    const Ctx = window.AudioContext || window.webkitAudioContext;
-    if (!Ctx) return;
-    if (!audioCtx) audioCtx = new Ctx();
-    if (audioCtx.state === 'suspended') audioCtx.resume().catch(() => {});
-    const source = audioCtx.createMediaElementSource(audioEl);
-    const gain = audioCtx.createGain();
-    gain.gain.value = state.volume;
-    source.connect(gain);
-    gain.connect(audioCtx.destination);
-    gainNode = gain;
-  } catch (e) {
-    console.error('[audio] Web-Audio-Verbindung fehlgeschlagen, Fallback auf audio.volume', e);
-  }
-}
 function startRealAudio(st) {
   if (!realAudioEl || realAudioEl.dataset.src !== st.audio_url) {
     realAudioEl = new Audio(st.audio_url);
     realAudioEl.preload = 'auto';
-    realAudioEl.volume = 1;
+    realAudioEl.volume = state.volume;
     realAudioEl.dataset.src = st.audio_url;
-    connectGain(realAudioEl);
     realAudioEl.addEventListener('timeupdate', () => {
       const el = Math.floor(realAudioEl.currentTime);
       if (el !== state.elapsed) { state.elapsed = el; patchPlayerUI(el, Math.round(realAudioEl.duration) || st.dur); }
@@ -236,8 +211,7 @@ function setVolume(v, opts) {
   v = Math.max(0, Math.min(1, Number(v)));
   if (!Number.isFinite(v)) v = 1;
   state.volume = v;
-  if (gainNode) gainNode.gain.value = v;
-  else if (realAudioEl) realAudioEl.volume = v;
+  if (realAudioEl) realAudioEl.volume = v;
   try { localStorage.setItem('aq_volume', String(v)); } catch (e) {}
   if (opts && opts.noRender) {
     const iconBtn = document.getElementById('vol-icon');
