@@ -29,9 +29,9 @@
     background: #3C3C3B;
   }
   #app { position: fixed; inset: 0; display: flex; flex-direction: column; overflow: hidden; }
-  .scroll  { overflow-y: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+  .scroll  { overflow-y: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; overscroll-behavior: contain; touch-action: pan-y; }
   .scroll::-webkit-scrollbar { display: none; }
-  .hscroll { display: flex; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+  .hscroll { display: flex; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; overscroll-behavior: contain; touch-action: pan-x; }
   .hscroll::-webkit-scrollbar { display: none; }
   input, textarea, select, button { font-family: 'Hanken Grotesk', system-ui, -apple-system, sans-serif; }
   @keyframes fadein  { from { opacity:0; transform:translateY(8px)  } to { opacity:1; transform:translateY(0) } }

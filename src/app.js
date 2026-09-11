@@ -22,6 +22,7 @@ let SETTINGS = {
   link_url: 'https://www.alte-schraubenfabrik.de',
   show_scan_button: true,
   home_block_order: ['buttons', 'banner', 'stations', 'sources'],
+  gallery_heading: 'Impressionen',
 };
 const HOME_BLOCK_LABELS = {
   buttons: 'Buttons (QR-Scan / Alle Stationen)',
@@ -111,6 +112,8 @@ const synth = window.speechSynthesis;
 let currentUtterance = null;
 let speechStartTime = null;
 let realAudioEl = null;
+let audioCtx = null;
+let gainNode = null;
 let _voices = [];
 function _loadVoices() { _voices = synth.getVoices(); }
 _loadVoices();
@@ -156,12 +159,35 @@ function startSpeech() {
   _startTick();
   synth.speak(utter);
 }
+function connectGain(audioEl) {
+  // iOS Safari ignoriert audio.volume komplett (bekannte Plattform-Einschränkung -
+  // Lautstärke lässt sich dort nur über die Hardware-Tasten ändern). Ein GainNode
+  // über die Web-Audio-API umgeht das, da die Pegelanpassung dort im Audiograph
+  // selbst passiert statt über die (auf iOS wirkungslose) HTMLMediaElement-Eigenschaft.
+  // Funktioniert zusätzlich auf allen anderen Plattformen genauso zuverlässig.
+  gainNode = null;
+  try {
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if (!Ctx) return;
+    if (!audioCtx) audioCtx = new Ctx();
+    if (audioCtx.state === 'suspended') audioCtx.resume().catch(() => {});
+    const source = audioCtx.createMediaElementSource(audioEl);
+    const gain = audioCtx.createGain();
+    gain.gain.value = state.volume;
+    source.connect(gain);
+    gain.connect(audioCtx.destination);
+    gainNode = gain;
+  } catch (e) {
+    console.error('[audio] Web-Audio-Verbindung fehlgeschlagen, Fallback auf audio.volume', e);
+  }
+}
 function startRealAudio(st) {
   if (!realAudioEl || realAudioEl.dataset.src !== st.audio_url) {
     realAudioEl = new Audio(st.audio_url);
     realAudioEl.preload = 'auto';
-    realAudioEl.volume = state.volume;
+    realAudioEl.volume = 1;
     realAudioEl.dataset.src = st.audio_url;
+    connectGain(realAudioEl);
     realAudioEl.addEventListener('timeupdate', () => {
       const el = Math.floor(realAudioEl.currentTime);
       if (el !== state.elapsed) { state.elapsed = el; patchPlayerUI(el, Math.round(realAudioEl.duration) || st.dur); }
@@ -210,7 +236,8 @@ function setVolume(v, opts) {
   v = Math.max(0, Math.min(1, Number(v)));
   if (!Number.isFinite(v)) v = 1;
   state.volume = v;
-  if (realAudioEl) realAudioEl.volume = v;
+  if (gainNode) gainNode.gain.value = v;
+  else if (realAudioEl) realAudioEl.volume = v;
   try { localStorage.setItem('aq_volume', String(v)); } catch (e) {}
   if (opts && opts.noRender) {
     const iconBtn = document.getElementById('vol-icon');
@@ -916,7 +943,7 @@ function buildStation() {
       ${cur ? `
       <div style="padding:6px 0 0;">
         <div style="display:flex;align-items:baseline;justify-content:space-between;padding:0 20px 10px;">
-          <span style="font:600 10px 'Hanken Grotesk',sans-serif;color:#908d8d;letter-spacing:.14em;text-transform:uppercase;">Das Gebäude heute</span>
+          <span style="font:600 10px 'Hanken Grotesk',sans-serif;color:#908d8d;letter-spacing:.14em;text-transform:uppercase;">${escHtml(SETTINGS.gallery_heading)}</span>
           <span style="font:500 11px 'Hanken Grotesk',sans-serif;color:#908d8d;">${gi + 1} / ${gal.length}</span>
         </div>
         <div style="position:relative;margin:0 auto;max-width:340px;border-radius:11px;overflow:hidden;background:#3C3C3B;aspect-ratio:3/2;">
@@ -1244,7 +1271,7 @@ function buildAdminGallery() {
   <div style="flex:1;display:flex;flex-direction:column;overflow:hidden;animation:fadein .18s ease both;">
     <div style="padding:14px 18px 12px;border-bottom:1px solid #e9e4e4;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;background:#ffffff;">
       <div>
-        <div style="font:700 18px 'Cormorant Garamond',serif;color:#3C3C3B;">Galerie „Das Gebäude heute"</div>
+        <div style="font:700 18px 'Cormorant Garamond',serif;color:#3C3C3B;">Galerie</div>
         <div style="font:400 11px 'Hanken Grotesk',sans-serif;color:#908d8d;margin-top:2px;">Diese Bilder erscheinen auf jeder Stationsseite und im Vollbild-Betrachter.</div>
       </div>
       <label class="tap" style="background:#3C3C3B;border:none;border-radius:9px;padding:9px 15px;font:600 12px 'Hanken Grotesk',sans-serif;color:#faf7f7;cursor:pointer;min-height:40px;display:flex;align-items:center;gap:6px;flex-shrink:0;">
@@ -1254,6 +1281,10 @@ function buildAdminGallery() {
       </label>
     </div>
     <div class="scroll" style="flex:1;padding:18px;">
+      <div style="margin-bottom:16px;">
+        <label style="font:600 11px 'Hanken Grotesk',sans-serif;color:#706f6f;letter-spacing:.12em;text-transform:uppercase;display:block;margin-bottom:7px;">Überschrift über der Galerie (Besucher-Ansicht)</label>
+        <input data-gallery-heading value="${escHtml(SETTINGS.gallery_heading)}" placeholder="z.B. Impressionen" style="width:100%;max-width:420px;border:1.5px solid #e9e4e4;border-radius:9px;padding:10px 12px;font:400 13px 'Hanken Grotesk',sans-serif;color:#3C3C3B;background:#fff;outline:none;"/>
+      </div>
       <div class="admin-gallery-grid" style="display:grid;grid-template-columns:1fr;gap:14px;">
         ${GALLERY.map((g) => `
         <div style="background:#fff;border:1px solid #e9e4e4;border-radius:14px;padding:12px;display:flex;gap:12px;align-items:flex-start;">
@@ -1525,6 +1556,8 @@ function bindEvents() {
   document.querySelectorAll('[data-gallery-caption]').forEach(el => {
     el.addEventListener('change', () => updateGalleryCaption(el.dataset.id, el.value));
   });
+  const galHeadingInput = document.querySelector('[data-gallery-heading]');
+  if (galHeadingInput) galHeadingInput.addEventListener('change', () => updateGalleryHeading(galHeadingInput.value));
   const audioInput = document.querySelector('[data-action="upload-audio"]');
   if (audioInput) audioInput.addEventListener('change', e => {
     const file = e.target.files && e.target.files[0];
@@ -1822,6 +1855,19 @@ async function updateGalleryCaption(id, caption) {
     const g = GALLERY.find(x => x.id === id);
     if (g) g.cap = caption;
     toast('Bildunterschrift gespeichert.');
+  } catch (e) {
+    alert('Speichern fehlgeschlagen: ' + (e?.message || e));
+  }
+}
+
+async function updateGalleryHeading(heading) {
+  heading = heading.trim() || 'Impressionen';
+  try {
+    const { data, error } = await supabase.from('site_settings').update({ gallery_heading: heading }).eq('id', 'main').select().single();
+    if (error) throw error;
+    SETTINGS = { ...SETTINGS, ...data };
+    render();
+    toast('Überschrift gespeichert.');
   } catch (e) {
     alert('Speichern fehlgeschlagen: ' + (e?.message || e));
   }

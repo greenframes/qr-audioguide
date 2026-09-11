@@ -85,6 +85,7 @@ create table if not exists public.site_settings (
   link_url        text not null default 'https://www.alte-schraubenfabrik.de',
   show_scan_button boolean not null default true,
   home_block_order jsonb not null default '["buttons","banner","stations","sources"]'::jsonb,
+  gallery_heading text not null default 'Impressionen',
   updated_at      timestamptz not null default now()
 );
 

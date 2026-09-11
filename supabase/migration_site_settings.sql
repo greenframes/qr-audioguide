@@ -19,6 +19,7 @@ create table if not exists public.site_settings (
   link_url        text not null default 'https://www.alte-schraubenfabrik.de',
   show_scan_button boolean not null default true,
   home_block_order jsonb not null default '["buttons","banner","stations","sources"]'::jsonb,
+  gallery_heading text not null default 'Impressionen',
   updated_at      timestamptz not null default now()
 );
 
@@ -31,6 +32,7 @@ alter table public.site_settings add column if not exists stations_kicker text n
 alter table public.site_settings add column if not exists badge_text text not null default '{n} STATIONEN';
 alter table public.site_settings add column if not exists station_label text not null default 'Station';
 alter table public.site_settings add column if not exists station_label_plural text not null default 'Stationen';
+alter table public.site_settings add column if not exists gallery_heading text not null default 'Impressionen';
 
 drop trigger if exists site_settings_set_updated_at on public.site_settings;
 create trigger site_settings_set_updated_at
